@@ -185,25 +185,20 @@ router.get("/tools/mac", async (req, res) => {
     return;
   }
 
+  // Format OUI as XX:XX:XX for the API
+  const oui = macClean.match(/.{1,2}/g)?.join(":") || macClean;
+
   try {
-    const data = await fetchJson(`https://api.macvendors.com/${encodeURIComponent(macClean)}`) as any;
-    if (typeof data === "string") {
-      res.json({ mac: mac.trim(), vendor: data, found: true });
+    // macvendors.com returns plain text, not JSON — use fetchText
+    const vendor = await fetchText(`https://api.macvendors.com/${oui}`) as string;
+    const vendorTrimmed = (vendor ?? "").trim();
+    if (vendorTrimmed && !vendorTrimmed.startsWith("{") && vendorTrimmed.length > 1) {
+      res.json({ mac: mac.trim(), vendor: vendorTrimmed, found: true });
     } else {
-      res.json({ mac: mac.trim(), vendor: "غير معروف", found: false });
+      res.json({ mac: mac.trim(), vendor: null, found: false });
     }
   } catch (err: any) {
-    if (err.message && err.message.includes("404")) {
-      res.json({ mac: mac.trim(), vendor: "غير معروف - لم يتم التعرف عليه", found: false });
-    } else {
-      try {
-        const formatted = macClean.match(/.{1,2}/g)?.join(":") || macClean;
-        const apiData = await fetchText(`https://api.macvendors.com/${formatted}`) as string;
-        res.json({ mac: mac.trim(), vendor: apiData.trim() || "غير معروف", found: !!apiData.trim() });
-      } catch {
-        res.json({ mac: mac.trim(), vendor: "تعذر الاتصال بقاعدة البيانات", found: false });
-      }
-    }
+    res.json({ mac: mac.trim(), vendor: null, found: false });
   }
 });
 
