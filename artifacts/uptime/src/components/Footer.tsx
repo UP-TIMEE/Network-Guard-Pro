@@ -1,8 +1,20 @@
 export function Footer() {
   return (
-    <footer className="sticky bottom-0 w-full border-t border-border bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60 py-4 mt-auto z-50">
-      <div className="container mx-auto px-4 text-center text-sm text-muted-foreground font-medium">
-        تم التطوير بواسطة: نعمان الأنصاري و بلال باجرون | بإشراف المهندس عبد الرحمن المنتشري
+    <footer className="w-full border-t border-border bg-card mt-auto">
+      <div className="container mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-2 text-sm text-muted-foreground">
+        <div className="font-medium">
+          تم التطوير بواسطة:{" "}
+          <span className="text-foreground font-semibold">نعمان الأنصاري</span>{" "}
+          و{" "}
+          <span className="text-foreground font-semibold">بلال باجرون</span>
+        </div>
+        <div className="font-medium">
+          بإشراف:{" "}
+          <span className="text-foreground font-semibold">
+            المهندس عبد الرحمن المنتشري
+          </span>
+        </div>
+        <div className="font-mono text-xs opacity-60">UPTIME &copy; 2025</div>
       </div>
     </footer>
   );
