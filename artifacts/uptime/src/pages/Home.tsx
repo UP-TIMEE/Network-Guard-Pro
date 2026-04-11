@@ -140,7 +140,7 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-12 mt-16 pt-10 border-t border-border w-full max-w-xs">
             {[
               { value: "+500", label: t("hero.stat1") },
-              { value: "11",   label: t("hero.stat2") },
+              { value: "12",   label: t("hero.stat2") },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-2xl font-black text-foreground">{stat.value}</div>

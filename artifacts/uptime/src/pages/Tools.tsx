@@ -10,12 +10,13 @@ import { IPv6CompressorTool } from "@/components/tools/IPv6CompressorTool";
 import { GeoIpTool } from "@/components/tools/GeoIpTool";
 import { DnsTool } from "@/components/tools/DnsTool";
 import { PortScanTool } from "@/components/tools/PortScanTool";
+import { MacTool } from "@/components/tools/MacTool";
 import { EmailHeaderTool } from "@/components/tools/EmailHeaderTool";
 import { DeepLinkTool } from "@/components/tools/DeepLinkTool";
 import { PasswordTool } from "@/components/tools/PasswordTool";
 import { PingTool } from "@/components/tools/PingTool";
 
-import { Calculator, Network, Timer, Hash, MapPin, Globe, ScanSearch, Mail, Link2, Lock, Activity } from "lucide-react";
+import { Calculator, Network, Timer, Hash, MapPin, Globe, ScanSearch, Cpu, Mail, Link2, Lock, Activity } from "lucide-react";
 
 export default function Tools() {
   const { t, tAny, dir } = useLanguage();
@@ -37,9 +38,10 @@ export default function Tools() {
       label: t("tools.module2"),
       dotColor: "bg-cyan-400",
       tools: [
-        { value: "geoip",    icon: MapPin,    key: "geoip",    component: GeoIpTool },
-        { value: "dns",      icon: Globe,     key: "dns",      component: DnsTool },
+        { value: "geoip",    icon: MapPin,     key: "geoip",    component: GeoIpTool },
+        { value: "dns",      icon: Globe,      key: "dns",      component: DnsTool },
         { value: "portscan", icon: ScanSearch, key: "portScan", component: PortScanTool },
+        { value: "mac",      icon: Cpu,        key: "mac",      component: MacTool },
       ],
     },
     {
