@@ -1,43 +1,57 @@
 import { Link, useLocation } from "wouter";
 import { Moon, Sun, Shield, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function Header() {
   const [location] = useLocation();
-  const [dark, setDark] = useState(true);
+  const { lang, setLang, t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [dark, setDark] = useState(() => {
+    try {
+      const saved = localStorage.getItem("uptime_dark");
+      return saved === null ? true : saved === "true";
+    } catch {
+      return true;
+    }
+  });
 
-  const toggleDark = () => {
-    const next = !dark;
-    setDark(next);
-    if (next) {
+  useEffect(() => {
+    if (dark) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
-  };
+    try { localStorage.setItem("uptime_dark", String(dark)); } catch {}
+  }, [dark]);
 
   const navItems = [
-    { label: "الرئيسية", href: "/" },
-    { label: "أدوات الشبكات", href: "/tools" },
+    { label: t("nav.home"), href: "/" },
+    { label: t("nav.tools"), href: "/tools" },
   ];
+
+  const isRTL = lang === "ar";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Left side: theme + language */}
-        <div className="flex items-center gap-2">
+        {/* Left side (LTR) / Right side in RTL: theme + language */}
+        <div className={`flex items-center gap-2 ${isRTL ? "order-first" : "order-last"}`}>
           <button
-            onClick={toggleDark}
+            onClick={() => setDark((d) => !d)}
             data-testid="button-theme-toggle"
             className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            title="تبديل المظهر"
+            title={dark ? t("nav.lightMode") : t("nav.darkMode")}
           >
             {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
-          <span className="text-xs text-muted-foreground border border-border rounded px-2 py-0.5 cursor-pointer hover:border-primary/50 hover:text-primary transition-colors select-none">
-            EN
-          </span>
+          <button
+            onClick={() => setLang(lang === "ar" ? "en" : "ar")}
+            data-testid="button-lang-toggle"
+            className="text-xs text-muted-foreground border border-border rounded px-2 py-0.5 cursor-pointer hover:border-primary/50 hover:text-primary transition-colors select-none font-mono"
+          >
+            {lang === "ar" ? "EN" : "AR"}
+          </button>
         </div>
 
         {/* Center: nav links (hidden on mobile) */}
@@ -58,9 +72,12 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Right side: logo */}
+        {/* Right side (LTR) / Left side RTL: logo */}
         <Link href="/">
-          <div className="flex items-center gap-2 cursor-pointer" data-testid="nav-logo">
+          <div
+            className={`flex items-center gap-2 cursor-pointer ${isRTL ? "order-last" : "order-first"}`}
+            data-testid="nav-logo"
+          >
             <div className="bg-foreground rounded-lg p-1.5">
               <Shield className="h-5 w-5 text-background" />
             </div>

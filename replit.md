@@ -2,7 +2,7 @@
 
 ## Overview
 
-UPTIME is a full-stack Arabic-language network security and cybersecurity awareness platform. It provides 7 functional security tools in a modern dark-themed RTL interface.
+UPTIME is a full-stack Arabic/English bilingual network security platform. It provides 9 functional tools organized in 3 modules, with a dark-themed RTL/LTR interface and full language switching support.
 
 ## Stack
 
@@ -16,33 +16,44 @@ UPTIME is a full-stack Arabic-language network security and cybersecurity awaren
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+- **Routing**: Wouter (client-side)
 
-## Features
+## Tools (9 total, organized in 3 modules)
 
-### 7 Security Tools (Arabic RTL Interface)
-1. **تتبع الموقع الجغرافي** (IP/Domain Geolocation) - with Leaflet interactive map
-2. **فحص سجلات DNS** - A, MX, TXT records lookup
-3. **تحديد المصنّع** (MAC Vendor Lookup) - via macvendors.com API
-4. **فحص المنافذ** (Port Scanner) - ports 80, 443, 22, 21
-5. **معلومات النطاق** (WHOIS Lookup) - via rdap.org
-6. **فحص الشهادة** (SSL Checker) - TLS certificate info
-7. **فحص سلامة الروابط** (URL Safety) - heuristic analysis
+### وحدة التخطيط (Planning Module) — Client-side calculators
+1. **حاسبة IPv4** (IP Calculator) - Subnet calculator: network/broadcast/hosts/mask from IP + CIDR
+2. **محول CIDR** (CIDR Converter) - Convert between CIDR notation and subnet mask
+3. **حاسبة النطاق الترددي** (Bandwidth Calculator) - Data transfer time calculator
 
-### UI Features
-- Full Dark Mode with 33/33/33 black/gray/white ratio
-- Cairo font (Arabic RTL layout)
-- Vertical Accordion navigation
-- Loading Spinners per tool
-- PDF export per tool (via window.print)
-- Sticky footer: نعمان الأنصاري، بلال باجرون، إشراف عبد الرحمن المنتشري
+### وحدة الفحص (Scan Module) — Backend-powered tools
+4. **تحديد الموقع الجغرافي** (IP Geolocation) - via ip-api.com with Leaflet interactive map
+5. **فحص سجلات DNS** - A, MX, TXT records via native Node.js DNS
+6. **تحديد المصنّع** (MAC Vendor) - via macvendors.com API
 
-## Key Commands
+### وحدة التحليل (Analysis Module) — Client-side analyzers + backend check
+7. **محلل ترويسة الإيميل** (Email Header Analyzer) - Parse routing hops, SPF/DKIM/DMARC, warnings
+8. **فحص الروابط العميق** (Deep Link Check) - URL safety: heuristic + pattern analysis
+9. **اختبار قوة كلمة المرور** (Password Strength) - Entropy calc, checklist, strong password generator
 
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
+## UI Features
+
+- **Bilingual**: Arabic (RTL) and English (LTR) with one-click toggle
+- **Language persistence**: localStorage key `uptime_lang`
+- **Dark Mode**: always-on by default, toggle saves to localStorage key `uptime_dark`
+- **Cairo font** for all text (both languages)
+- **Vertical Accordion** per module with numbered tools (01-09)
+- **PDF export** per tool (via styled window.print)
+- **Sticky footer**: نعمان الأنصاري، بلال باجرون، بإشراف المهندس عبد الرحمن المنتشري
+- **Responsive**: mobile nav hamburger menu
+
+## Architecture
+
+- `artifacts/uptime/src/contexts/LanguageContext.tsx` — Language + translations (AR/EN)
+- `artifacts/uptime/src/components/Header.tsx` — Sticky header with dark mode + lang toggle
+- `artifacts/uptime/src/pages/Home.tsx` — Hero + 3 cards
+- `artifacts/uptime/src/pages/Tools.tsx` — 3-module accordion tool page
+- `artifacts/uptime/src/components/tools/` — All 9 tool components
+- `artifacts/api-server/src/routes/tools.ts` — Backend routes for scan module
 
 ## API Endpoints
 
@@ -57,10 +68,17 @@ All under `/api/tools/`:
 
 ## External APIs Used
 
-- ip-api.com (free, HTTP) - GeoIP lookups
+- ip-api.com (free, HTTP only) - GeoIP lookups
 - Native Node.js DNS module - DNS records
-- macvendors.com - MAC vendor lookup
-- rdap.org - WHOIS/RDAP data
+- macvendors.com HTTPS API - MAC vendor lookup
+- rdap.org HTTPS API - WHOIS/RDAP data
 - Native Node.js TLS module - SSL certificate inspection
+
+## Key Commands
+
+- `pnpm run typecheck` — full typecheck across all packages
+- `pnpm run build` — typecheck + build all packages
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks from OpenAPI spec
+- `pnpm --filter @workspace/api-server run dev` — run API server locally
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
