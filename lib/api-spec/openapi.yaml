@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: UPTIME Network Security Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: tools
+    description: Network security tools
 paths:
   /healthz:
     get:
@@ -24,6 +26,174 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /tools/geoip:
+    get:
+      operationId: geoIpLookup
+      tags: [tools]
+      summary: IP/Domain Geolocation Lookup
+      parameters:
+        - name: target
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Geolocation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeoIpResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResult"
+  /tools/dns:
+    get:
+      operationId: dnsLookup
+      tags: [tools]
+      summary: DNS Records Lookup
+      parameters:
+        - name: domain
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: DNS records result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DnsResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResult"
+  /tools/mac:
+    get:
+      operationId: macVendorLookup
+      tags: [tools]
+      summary: MAC Address Vendor Lookup
+      parameters:
+        - name: mac
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: MAC vendor result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MacResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResult"
+  /tools/portscan:
+    get:
+      operationId: portScan
+      tags: [tools]
+      summary: Simple Port Scanner
+      parameters:
+        - name: host
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Port scan result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortScanResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResult"
+  /tools/whois:
+    get:
+      operationId: whoisLookup
+      tags: [tools]
+      summary: WHOIS Domain Lookup
+      parameters:
+        - name: domain
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: WHOIS result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WhoisResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResult"
+  /tools/ssl:
+    get:
+      operationId: sslCheck
+      tags: [tools]
+      summary: SSL Certificate Check
+      parameters:
+        - name: domain
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: SSL check result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SslResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResult"
+  /tools/urlsafety:
+    get:
+      operationId: urlSafetyCheck
+      tags: [tools]
+      summary: URL Safety Check
+      parameters:
+        - name: url
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: URL safety result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UrlSafetyResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResult"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +203,181 @@ components:
           type: string
       required:
         - status
-
+    ErrorResult:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    GeoIpResult:
+      type: object
+      properties:
+        ip:
+          type: string
+        country:
+          type: string
+        countryCode:
+          type: string
+        region:
+          type: string
+        city:
+          type: string
+        lat:
+          type: number
+        lon:
+          type: number
+        isp:
+          type: string
+        org:
+          type: string
+        timezone:
+          type: string
+        isPrivate:
+          type: boolean
+        query:
+          type: string
+      required:
+        - ip
+        - query
+        - isPrivate
+    DnsRecord:
+      type: object
+      properties:
+        type:
+          type: string
+        value:
+          type: string
+        ttl:
+          type: integer
+      required:
+        - type
+        - value
+    DnsResult:
+      type: object
+      properties:
+        domain:
+          type: string
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/DnsRecord"
+      required:
+        - domain
+        - records
+    MacResult:
+      type: object
+      properties:
+        mac:
+          type: string
+        vendor:
+          type: string
+        found:
+          type: boolean
+      required:
+        - mac
+        - found
+    PortResult:
+      type: object
+      properties:
+        port:
+          type: integer
+        service:
+          type: string
+        open:
+          type: boolean
+        latencyMs:
+          type: number
+      required:
+        - port
+        - service
+        - open
+    PortScanResult:
+      type: object
+      properties:
+        host:
+          type: string
+        ports:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortResult"
+        scannedAt:
+          type: string
+      required:
+        - host
+        - ports
+        - scannedAt
+    WhoisResult:
+      type: object
+      properties:
+        domain:
+          type: string
+        registrar:
+          type: string
+        createdDate:
+          type: string
+        expiryDate:
+          type: string
+        updatedDate:
+          type: string
+        status:
+          type: string
+        nameservers:
+          type: array
+          items:
+            type: string
+        registrant:
+          type: string
+        rawData:
+          type: string
+      required:
+        - domain
+    SslResult:
+      type: object
+      properties:
+        domain:
+          type: string
+        valid:
+          type: boolean
+        issuer:
+          type: string
+        subject:
+          type: string
+        validFrom:
+          type: string
+        validTo:
+          type: string
+        daysRemaining:
+          type: integer
+        protocol:
+          type: string
+        selfSigned:
+          type: boolean
+        expired:
+          type: boolean
+      required:
+        - domain
+        - valid
+    UrlSafetyResult:
+      type: object
+      properties:
+        url:
+          type: string
+        safe:
+          type: boolean
+        score:
+          type: integer
+        threats:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+        checked:
+          type: boolean
+      required:
+        - url
+        - safe
+        - checked
