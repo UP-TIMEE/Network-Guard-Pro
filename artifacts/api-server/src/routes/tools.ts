@@ -484,4 +484,31 @@ router.get("/tools/urlsafety", async (req, res) => {
   }
 });
 
+// GET /api/tools/ping
+router.get("/tools/ping", async (req, res) => {
+  const host = req.query["host"];
+  if (!host || typeof host !== "string") {
+    res.status(400).json({ error: "host parameter is required" });
+    return;
+  }
+  const h = host.trim().replace(/^https?:\/\//, "").split("/")[0];
+
+  const ports = [80, 443, 22];
+  let result = { open: false, latencyMs: 0 };
+
+  for (const port of ports) {
+    const r = await checkPort(h, port);
+    if (r.open) {
+      result = r;
+      break;
+    }
+  }
+
+  if (!result.open) {
+    result = await checkPort(h, 443);
+  }
+
+  res.json({ host: h, open: result.open, latencyMs: result.open ? result.latencyMs : null });
+});
+
 export default router;

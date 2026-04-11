@@ -6,14 +6,16 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { IpCalcTool } from "@/components/tools/IpCalcTool";
 import { CidrTool } from "@/components/tools/CidrTool";
 import { BandwidthTool } from "@/components/tools/BandwidthTool";
+import { IPv6CompressorTool } from "@/components/tools/IPv6CompressorTool";
 import { GeoIpTool } from "@/components/tools/GeoIpTool";
 import { DnsTool } from "@/components/tools/DnsTool";
-import { MacTool } from "@/components/tools/MacTool";
+import { PortScanTool } from "@/components/tools/PortScanTool";
 import { EmailHeaderTool } from "@/components/tools/EmailHeaderTool";
 import { DeepLinkTool } from "@/components/tools/DeepLinkTool";
 import { PasswordTool } from "@/components/tools/PasswordTool";
+import { PingTool } from "@/components/tools/PingTool";
 
-import { Calculator, Network, Timer, MapPin, Globe, Cpu, Mail, Link2, Lock } from "lucide-react";
+import { Calculator, Network, Timer, Hash, MapPin, Globe, ScanSearch, Mail, Link2, Lock, Activity } from "lucide-react";
 
 export default function Tools() {
   const { t, tAny, dir } = useLanguage();
@@ -22,34 +24,33 @@ export default function Tools() {
     {
       id: "planning",
       label: t("tools.module1"),
-      color: "from-blue-500/10 to-transparent border-blue-500/20",
       dotColor: "bg-blue-500",
       tools: [
-        { value: "ipcalc", icon: Calculator, key: "ipCalc", component: IpCalcTool },
-        { value: "cidr", icon: Network, key: "cidr", component: CidrTool },
-        { value: "bandwidth", icon: Timer, key: "bandwidth", component: BandwidthTool },
+        { value: "ipcalc",    icon: Calculator, key: "ipCalc",    component: IpCalcTool },
+        { value: "cidr",      icon: Network,    key: "cidr",      component: CidrTool },
+        { value: "bandwidth", icon: Timer,       key: "bandwidth", component: BandwidthTool },
+        { value: "ipv6",      icon: Hash,        key: "ipv6",      component: IPv6CompressorTool },
       ],
     },
     {
       id: "scan",
       label: t("tools.module2"),
-      color: "from-cyan-500/10 to-transparent border-cyan-500/20",
       dotColor: "bg-cyan-400",
       tools: [
-        { value: "geoip", icon: MapPin, key: "geoip", component: GeoIpTool },
-        { value: "dns", icon: Globe, key: "dns", component: DnsTool },
-        { value: "mac", icon: Cpu, key: "mac", component: MacTool },
+        { value: "geoip",    icon: MapPin,    key: "geoip",    component: GeoIpTool },
+        { value: "dns",      icon: Globe,     key: "dns",      component: DnsTool },
+        { value: "portscan", icon: ScanSearch, key: "portScan", component: PortScanTool },
       ],
     },
     {
       id: "analysis",
       label: t("tools.module3"),
-      color: "from-purple-500/10 to-transparent border-purple-500/20",
       dotColor: "bg-purple-400",
       tools: [
-        { value: "emailheader", icon: Mail, key: "emailHeader", component: EmailHeaderTool },
-        { value: "deeplink", icon: Link2, key: "deepLink", component: DeepLinkTool },
-        { value: "password", icon: Lock, key: "password", component: PasswordTool },
+        { value: "emailheader", icon: Mail,     key: "emailHeader", component: EmailHeaderTool },
+        { value: "deeplink",    icon: Link2,    key: "deepLink",    component: DeepLinkTool },
+        { value: "password",    icon: Lock,     key: "password",    component: PasswordTool },
+        { value: "ping",        icon: Activity, key: "ping",        component: PingTool },
       ],
     },
   ];
@@ -69,7 +70,7 @@ export default function Tools() {
         <div className="space-y-8">
           {modules.map((mod) => (
             <div key={mod.id}>
-              <div className={`flex items-center gap-3 mb-4 pb-3 border-b border-border`}>
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border">
                 <span className={`w-2.5 h-2.5 rounded-full ${mod.dotColor} flex-shrink-0`} />
                 <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">{mod.label}</h2>
               </div>
@@ -89,7 +90,7 @@ export default function Tools() {
                       data-testid={`accordion-${tool.value}`}
                     >
                       <AccordionTrigger className="hover:no-underline px-6 py-5 hover:bg-muted/40 transition-colors">
-                        <div className="flex items-center gap-4 text-right w-full">
+                        <div className="flex items-center gap-4 w-full">
                           <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
                             <Icon className="h-4 w-4 text-foreground" />
                           </div>
@@ -104,7 +105,7 @@ export default function Tools() {
                               {toolT.desc}
                             </p>
                           </div>
-                          <span className="flex-shrink-0 text-xs text-muted-foreground/50 font-mono ml-2">
+                          <span className="flex-shrink-0 text-xs text-muted-foreground/50 font-mono">
                             {String(idx).padStart(2, "0")}
                           </span>
                         </div>
