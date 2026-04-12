@@ -5,6 +5,7 @@ import * as net from "net";
 import * as dns from "dns";
 import { promisify } from "util";
 import Parser from "rss-parser";
+import { translate } from "@vitalets/google-translate-api";
 
 const router = Router();
 
@@ -493,10 +494,22 @@ const RSS_SOURCES = [
   { url: "https://krebsonsecurity.com/feed/", name: "Krebs on Security" },
 ];
 
+// Helper: translate a single string to Arabic, fall back to original on error
+async function translateToAr(text: string): Promise<string> {
+  if (!text) return text;
+  try {
+    const { text: translated } = await translate(text, { to: "ar" });
+    return translated;
+  } catch {
+    return text;
+  }
+}
+
 router.get("/news", async (req, res) => {
   const limit = Math.min(Number(req.query["limit"] ?? 6), 12);
-  const allItems: any[] = [];
+  const rawItems: any[] = [];
 
+  // 1. Fetch all RSS feeds in parallel
   await Promise.allSettled(
     RSS_SOURCES.map(async ({ url, name }) => {
       const feed = await rssParser.parseURL(url);
@@ -504,7 +517,7 @@ router.get("/news", async (req, res) => {
         const rawDesc =
           item.contentSnippet ?? item.summary ?? item.content ?? "";
         const description = rawDesc.replace(/<[^>]+>/g, "").slice(0, 180).trim();
-        allItems.push({
+        rawItems.push({
           title: (item.title ?? "").trim(),
           link: item.link ?? "",
           description: description ? description + "…" : "",
@@ -515,11 +528,30 @@ router.get("/news", async (req, res) => {
     })
   );
 
-  allItems.sort(
+  // 2. Sort descending by date (newest first)
+  rawItems.sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  res.json({ items: allItems.slice(0, limit), total: allItems.length });
+  // 3. Pick the top items then translate title + description to Arabic
+  const topItems = rawItems.slice(0, limit);
+
+  const translatedItems = await Promise.all(
+    topItems.map(async (item) => {
+      const [titleAr, descAr] = await Promise.all([
+        translateToAr(item.title),
+        translateToAr(item.description),
+      ]);
+      return {
+        ...item,
+        title: titleAr,
+        description: descAr,
+        // link and source are untouched
+      };
+    })
+  );
+
+  res.json({ items: translatedItems, total: rawItems.length });
 });
 
 // GET /api/tools/ping
