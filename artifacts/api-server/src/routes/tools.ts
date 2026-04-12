@@ -536,15 +536,15 @@ function cleanDescription(raw: string): string {
 }
 
 router.get("/news", async (req, res) => {
-  const limit = Math.min(Number(req.query["limit"] ?? 6), 12);
+  const limit = Math.min(Number(req.query["limit"] ?? 15), 15);
   const rawItems: any[] = [];
 
   // 1. Fetch all RSS feeds in parallel; individual failures are silently skipped
   await Promise.allSettled(
     RSS_SOURCES.map(async ({ url, name }) => {
       const feed = await rssParser.parseURL(url);
-      // Scan up to 20 items per source to get enough after filtering
-      for (const item of feed.items.slice(0, 20)) {
+      // Scan all available items (up to 50) to maximise past-item coverage
+      for (const item of feed.items.slice(0, 50)) {
         const rawDesc =
           item.contentSnippet ?? item.summary ?? item.content ?? "";
         const cleaned = cleanDescription(rawDesc);
