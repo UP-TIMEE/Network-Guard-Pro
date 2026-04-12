@@ -43,7 +43,7 @@ function formatDate(iso: string, lang: string): string {
 
 const SOURCE_COLOR: Record<string, string> = {
   "البوابة التقنية": "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  "عرب هاردوير":    "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  "عالم التقنية":   "bg-violet-500/10 text-violet-400 border-violet-500/20",
 };
 
 export function NewsSection() {
@@ -121,7 +121,7 @@ export function NewsSection() {
             <Globe className="h-3 w-3" />
             {isRtl ? "المصادر:" : "Sources:"}
           </span>
-          {["البوابة التقنية", "عرب هاردوير"].map((src) => (
+          {["البوابة التقنية", "عالم التقنية"].map((src) => (
             <span
               key={src}
               className={`text-xs px-2.5 py-0.5 rounded-full border font-medium ${SOURCE_COLOR[src] ?? "bg-muted text-muted-foreground border-border"}`}

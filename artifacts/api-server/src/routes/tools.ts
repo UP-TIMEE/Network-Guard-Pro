@@ -487,35 +487,85 @@ const rssParser = new Parser({
   customFields: { item: [["content:encoded", "contentEncoded"]] },
 });
 
+// Sources — main feeds; security items are filtered by keyword below
 const RSS_SOURCES = [
-  { url: "https://aitnews.com/feed/",              name: "البوابة التقنية" },
-  { url: "https://www.arabhardware.net/feed/",     name: "عرب هاردوير" },
+  { url: "https://aitnews.com/feed/",           name: "البوابة التقنية" },
+  { url: "https://www.tech-wd.com/wd/feed/",   name: "عالم التقنية"   },
 ];
+
+// Highly specific cybersecurity terms — matched in TITLE only
+const TITLE_SECURITY_KEYWORDS = [
+  "ثغر", "اختراق", "هجوم إلكتروني", "هجوم سيبراني", "هجمات إلكترونية",
+  "برمجيات خبيثة", "برنامج خبيث", "قرصنة", "تسريب", "تجسس",
+  "هاكر", "فيروس", "رانسوم", "مخترق", "ابتزاز إلكتروني",
+  "كلمة مرور", "ضعف أمني", "اختراق إلكتروني", "مجموعة قراصنة",
+  "تهديد إلكتروني", "تشفير", "خصوصية", "حماية البيانات",
+  "أمن المعلومات", "أمن سيبراني", "أمن الشبكات", "جدار الحماية",
+  "malware", "ransomware", "vulnerability", "CVE", "exploit",
+  "breach", "phishing", "zero-day", "cyberattack", "spyware",
+  "cybersecurity", "cyber security", "encryption", "firewall",
+  "trojan", "backdoor", "botnet", "ddos", "rootkit",
+];
+
+function isSecurityRelated(title: string): boolean {
+  const titleLc = title.toLowerCase();
+  return TITLE_SECURITY_KEYWORDS.some((kw) => titleLc.includes(kw.toLowerCase()));
+}
+
+/**
+ * Clean promotional boilerplate from RSS descriptions:
+ * - "The post X appeared first on Y."
+ * - "المقالة X ظهرت أولاً على Y."
+ * - Trailing English-only sentences
+ */
+function cleanDescription(raw: string): string {
+  return raw
+    // "The post … appeared first on …."
+    .replace(/The post .+? appeared first on .+?\./gi, "")
+    // "This article … first appeared on …."
+    .replace(/This article .+? first appeared on .+?\./gi, "")
+    // Arabic equivalent patterns
+    .replace(/المقال[ةه]? .+? ظهر.+? على .+?\./gi, "")
+    .replace(/تم نشر .+? على .+?\./gi, "")
+    // Remove leftover HTML entities and tags
+    .replace(/<[^>]+>/g, "")
+    .replace(/&[a-z]+;/gi, " ")
+    // Collapse whitespace
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
 
 router.get("/news", async (req, res) => {
   const limit = Math.min(Number(req.query["limit"] ?? 6), 12);
   const rawItems: any[] = [];
 
-  // 1. Fetch all RSS feeds in parallel; failures are silently skipped
+  // 1. Fetch all RSS feeds in parallel; individual failures are silently skipped
   await Promise.allSettled(
     RSS_SOURCES.map(async ({ url, name }) => {
       const feed = await rssParser.parseURL(url);
-      for (const item of feed.items.slice(0, 8)) {
+      // Scan up to 20 items per source to get enough after filtering
+      for (const item of feed.items.slice(0, 20)) {
         const rawDesc =
           item.contentSnippet ?? item.summary ?? item.content ?? "";
-        const description = rawDesc.replace(/<[^>]+>/g, "").slice(0, 200).trim();
+        const cleaned = cleanDescription(rawDesc);
+        const title   = (item.title ?? "").trim();
+
+        // 2. Keep only cybersecurity-related items (title-only check = no false positives)
+        if (!isSecurityRelated(title)) continue;
+
+        const description = cleaned.slice(0, 220).trim();
         rawItems.push({
-          title: (item.title ?? "").trim(),
-          link: item.link ?? "",
+          title,
+          link:        item.link ?? "",
           description: description ? description + "…" : "",
-          date: item.isoDate ?? item.pubDate ?? new Date().toISOString(),
-          source: name,
+          date:        item.isoDate ?? item.pubDate ?? new Date().toISOString(),
+          source:      name,
         });
       }
     })
   );
 
-  // 2. Sort descending by date (newest first)
+  // 3. Sort descending by date (newest first)
   rawItems.sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
