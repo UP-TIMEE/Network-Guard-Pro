@@ -42,9 +42,8 @@ function formatDate(iso: string, lang: string): string {
 }
 
 const SOURCE_COLOR: Record<string, string> = {
-  "The Hacker News":   "bg-red-500/10 text-red-400 border-red-500/20",
-  "BleepingComputer":  "bg-orange-500/10 text-orange-400 border-orange-500/20",
-  "Krebs on Security": "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  "البوابة التقنية": "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  "عرب هاردوير":    "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
 };
 
 export function NewsSection() {
@@ -122,7 +121,7 @@ export function NewsSection() {
             <Globe className="h-3 w-3" />
             {isRtl ? "المصادر:" : "Sources:"}
           </span>
-          {["The Hacker News", "BleepingComputer", "Krebs on Security"].map((src) => (
+          {["البوابة التقنية", "عرب هاردوير"].map((src) => (
             <span
               key={src}
               className={`text-xs px-2.5 py-0.5 rounded-full border font-medium ${SOURCE_COLOR[src] ?? "bg-muted text-muted-foreground border-border"}`}

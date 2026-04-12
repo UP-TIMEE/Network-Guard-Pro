@@ -5,7 +5,6 @@ import * as net from "net";
 import * as dns from "dns";
 import { promisify } from "util";
 import Parser from "rss-parser";
-import { translate } from "@vitalets/google-translate-api";
 
 const router = Router();
 
@@ -481,42 +480,30 @@ router.get("/tools/urlsafety", async (req, res) => {
   }
 });
 
-// GET /api/news — Cybersecurity RSS news feed
+// GET /api/news — Arabic Cybersecurity RSS news feed
 const rssParser = new Parser({
-  timeout: 8000,
-  headers: { "User-Agent": "UPTIME-Platform/1.0 RSS Reader" },
-  customFields: { item: [["content:encoded", "contentEncoded"], "author"] },
+  timeout: 10000,
+  headers: { "User-Agent": "Mozilla/5.0 (compatible; UPTIME-Bot/1.0)" },
+  customFields: { item: [["content:encoded", "contentEncoded"]] },
 });
 
 const RSS_SOURCES = [
-  { url: "https://feeds.feedburner.com/TheHackersNews", name: "The Hacker News" },
-  { url: "https://www.bleepingcomputer.com/feed/", name: "BleepingComputer" },
-  { url: "https://krebsonsecurity.com/feed/", name: "Krebs on Security" },
+  { url: "https://aitnews.com/feed/",              name: "البوابة التقنية" },
+  { url: "https://www.arabhardware.net/feed/",     name: "عرب هاردوير" },
 ];
-
-// Helper: translate a single string to Arabic, fall back to original on error
-async function translateToAr(text: string): Promise<string> {
-  if (!text) return text;
-  try {
-    const { text: translated } = await translate(text, { to: "ar" });
-    return translated;
-  } catch {
-    return text;
-  }
-}
 
 router.get("/news", async (req, res) => {
   const limit = Math.min(Number(req.query["limit"] ?? 6), 12);
   const rawItems: any[] = [];
 
-  // 1. Fetch all RSS feeds in parallel
+  // 1. Fetch all RSS feeds in parallel; failures are silently skipped
   await Promise.allSettled(
     RSS_SOURCES.map(async ({ url, name }) => {
       const feed = await rssParser.parseURL(url);
-      for (const item of feed.items.slice(0, 6)) {
+      for (const item of feed.items.slice(0, 8)) {
         const rawDesc =
           item.contentSnippet ?? item.summary ?? item.content ?? "";
-        const description = rawDesc.replace(/<[^>]+>/g, "").slice(0, 180).trim();
+        const description = rawDesc.replace(/<[^>]+>/g, "").slice(0, 200).trim();
         rawItems.push({
           title: (item.title ?? "").trim(),
           link: item.link ?? "",
@@ -533,25 +520,7 @@ router.get("/news", async (req, res) => {
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  // 3. Pick the top items then translate title + description to Arabic
-  const topItems = rawItems.slice(0, limit);
-
-  const translatedItems = await Promise.all(
-    topItems.map(async (item) => {
-      const [titleAr, descAr] = await Promise.all([
-        translateToAr(item.title),
-        translateToAr(item.description),
-      ]);
-      return {
-        ...item,
-        title: titleAr,
-        description: descAr,
-        // link and source are untouched
-      };
-    })
-  );
-
-  res.json({ items: translatedItems, total: rawItems.length });
+  res.json({ items: rawItems.slice(0, limit), total: rawItems.length });
 });
 
 // GET /api/tools/ping
