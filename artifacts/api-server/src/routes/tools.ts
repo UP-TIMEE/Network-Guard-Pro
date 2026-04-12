@@ -4,6 +4,7 @@ import * as https from "https";
 import * as net from "net";
 import * as dns from "dns";
 import { promisify } from "util";
+import Parser from "rss-parser";
 
 const router = Router();
 
@@ -477,6 +478,48 @@ router.get("/tools/urlsafety", async (req, res) => {
     req.log.error({ err }, "URL safety check failed");
     res.status(400).json({ error: err.message || "URL safety check failed" });
   }
+});
+
+// GET /api/news — Cybersecurity RSS news feed
+const rssParser = new Parser({
+  timeout: 8000,
+  headers: { "User-Agent": "UPTIME-Platform/1.0 RSS Reader" },
+  customFields: { item: [["content:encoded", "contentEncoded"], "author"] },
+});
+
+const RSS_SOURCES = [
+  { url: "https://feeds.feedburner.com/TheHackersNews", name: "The Hacker News" },
+  { url: "https://www.bleepingcomputer.com/feed/", name: "BleepingComputer" },
+  { url: "https://krebsonsecurity.com/feed/", name: "Krebs on Security" },
+];
+
+router.get("/news", async (req, res) => {
+  const limit = Math.min(Number(req.query["limit"] ?? 6), 12);
+  const allItems: any[] = [];
+
+  await Promise.allSettled(
+    RSS_SOURCES.map(async ({ url, name }) => {
+      const feed = await rssParser.parseURL(url);
+      for (const item of feed.items.slice(0, 6)) {
+        const rawDesc =
+          item.contentSnippet ?? item.summary ?? item.content ?? "";
+        const description = rawDesc.replace(/<[^>]+>/g, "").slice(0, 180).trim();
+        allItems.push({
+          title: (item.title ?? "").trim(),
+          link: item.link ?? "",
+          description: description ? description + "…" : "",
+          date: item.isoDate ?? item.pubDate ?? new Date().toISOString(),
+          source: name,
+        });
+      }
+    })
+  );
+
+  allItems.sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  res.json({ items: allItems.slice(0, limit), total: allItems.length });
 });
 
 // GET /api/tools/ping

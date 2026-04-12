@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { NewsSection } from "@/components/NewsSection";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Wrench, BookOpen, Rss, Zap, ArrowLeft, ArrowRight, Shield, Network, X } from "lucide-react";
+import { Wrench, BookOpen, Rss, Zap, ArrowLeft, ArrowRight, Shield, Network, X, ArrowDown } from "lucide-react";
 
 function UptimeLogo() {
   return (
@@ -91,7 +92,7 @@ export default function Home() {
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
 
       <main className="flex-1 flex flex-col">
-        {/* Hero */}
+        {/* ===== Hero ===== */}
         <section className="flex-1 flex flex-col items-center justify-center text-center px-4 py-20 relative overflow-hidden">
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
@@ -150,7 +151,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Feature cards */}
+        {/* ===== Feature cards ===== */}
         <section id="features" className="py-16 px-4 border-t border-border">
           <div className="container mx-auto max-w-4xl">
             <div className="text-center mb-10">
@@ -159,6 +160,7 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Card 1 — Network Tools */}
               <Link href="/tools">
                 <div
                   data-testid="card-tools"
@@ -176,6 +178,7 @@ export default function Home() {
                 </div>
               </Link>
 
+              {/* Card 2 — Training (coming soon) */}
               <div
                 data-testid="card-training"
                 className="bg-card border border-border rounded-2xl p-6 opacity-60 h-full"
@@ -190,24 +193,27 @@ export default function Home() {
                 </div>
               </div>
 
-              <div
+              {/* Card 3 — News (now live!) */}
+              <a
+                href="#news"
                 data-testid="card-news"
-                className="bg-card border border-border rounded-2xl p-6 opacity-60 h-full"
+                className="group bg-card border border-border rounded-2xl p-6 h-full hover:border-primary/30 hover:shadow-md transition-all duration-200 cursor-pointer block"
               >
-                <div className="bg-muted rounded-xl p-3 w-fit mb-4">
-                  <Rss className="h-6 w-6 text-muted-foreground" />
+                <div className="bg-muted rounded-xl p-3 w-fit mb-4 group-hover:bg-primary/10 transition-colors">
+                  <Rss className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
                 <h3 className="text-lg font-black mb-2 text-foreground">{t("home.card3Title")}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{t("home.card3Desc")}</p>
-                <div className="mt-4 inline-flex items-center text-xs font-semibold text-muted-foreground border border-border px-2.5 py-1 rounded-full">
-                  {t("home.soon")}
+                <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-primary">
+                  <ArrowDown className="h-3.5 w-3.5" />
+                  <span>{isRtl ? "اطّلع على الأخبار" : "View News Feed"}</span>
                 </div>
-              </div>
+              </a>
             </div>
           </div>
         </section>
 
-        {/* Feature highlights */}
+        {/* ===== Feature highlights ===== */}
         <section className="py-16 border-t border-border bg-card/30">
           <div className="container mx-auto px-4 max-w-4xl">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
@@ -227,6 +233,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* ===== Dynamic News Feed ===== */}
+        <NewsSection />
       </main>
 
       <Footer />
