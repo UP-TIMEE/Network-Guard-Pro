@@ -2,9 +2,8 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { NewsSection } from "@/components/NewsSection";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Wrench, BookOpen, Rss, Zap, ArrowLeft, ArrowRight, Shield, Network, X, ArrowDown, GraduationCap } from "lucide-react";
+import { Wrench, Rss, Zap, ArrowLeft, ArrowRight, Shield, Network, X, GraduationCap } from "lucide-react";
 
 function UptimeLogo() {
   return (
@@ -119,15 +118,16 @@ export default function Home() {
           </p>
 
           <div className="flex items-center gap-4 flex-wrap justify-center">
-            <Link href="/tools">
-              <span
-                className="inline-flex items-center gap-2 px-6 py-3 bg-foreground text-background font-bold rounded-xl hover:bg-foreground/90 transition-colors cursor-pointer"
-                data-testid="button-start"
-              >
-                <ArrowIcon className="h-4 w-4" />
-                {t("hero.startNow")}
-              </span>
-            </Link>
+            <button
+              onClick={() =>
+                document.getElementById("features-section")?.scrollIntoView({ behavior: "smooth" })
+              }
+              className="inline-flex items-center gap-2 px-6 py-3 bg-foreground text-background font-bold rounded-xl hover:bg-foreground/90 transition-colors cursor-pointer"
+              data-testid="button-start"
+            >
+              <ArrowIcon className="h-4 w-4" />
+              {t("hero.startNow")}
+            </button>
             <button
               onClick={() => setAboutOpen(true)}
               className="inline-flex items-center gap-2 px-6 py-3 border border-border text-muted-foreground font-semibold rounded-xl hover:bg-muted hover:text-foreground transition-colors"
@@ -152,7 +152,7 @@ export default function Home() {
         </section>
 
         {/* ===== Feature cards ===== */}
-        <section id="features" className="py-16 px-4 border-t border-border">
+        <section id="features-section" className="py-16 px-4 border-t border-border">
           <div className="container mx-auto max-w-4xl">
             <div className="text-center mb-10">
               <h2 className="text-2xl font-black text-foreground mb-2">{t("home.sectionTitle")}</h2>
@@ -196,22 +196,23 @@ export default function Home() {
                 </div>
               </Link>
 
-              {/* Card 3 — News (now live!) */}
-              <a
-                href="#news"
-                data-testid="card-news"
-                className="group bg-card border border-border rounded-2xl p-6 h-full hover:border-primary/30 hover:shadow-md transition-all duration-200 cursor-pointer block"
-              >
-                <div className="bg-muted rounded-xl p-3 w-fit mb-4 group-hover:bg-primary/10 transition-colors">
-                  <Rss className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+              {/* Card 3 — News */}
+              <Link href="/news">
+                <div
+                  data-testid="card-news"
+                  className="group bg-card border border-border rounded-2xl p-6 h-full hover:border-primary/30 hover:shadow-md transition-all duration-200 cursor-pointer"
+                >
+                  <div className="bg-muted rounded-xl p-3 w-fit mb-4 group-hover:bg-primary/10 transition-colors">
+                    <Rss className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  <h3 className="text-lg font-black mb-2 text-foreground">{t("home.card3Title")}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{t("home.card3Desc")}</p>
+                  <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-primary">
+                    <ArrowIcon className="h-3.5 w-3.5" />
+                    <span>{isRtl ? "اطّلع على الأخبار" : "View News Feed"}</span>
+                  </div>
                 </div>
-                <h3 className="text-lg font-black mb-2 text-foreground">{t("home.card3Title")}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{t("home.card3Desc")}</p>
-                <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-primary">
-                  <ArrowDown className="h-3.5 w-3.5" />
-                  <span>{isRtl ? "اطّلع على الأخبار" : "View News Feed"}</span>
-                </div>
-              </a>
+              </Link>
             </div>
           </div>
         </section>
@@ -237,8 +238,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ===== Dynamic News Feed ===== */}
-        <NewsSection />
       </main>
 
       <Footer />

@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Tools from "@/pages/Tools";
 import Training from "@/pages/Training";
+import News from "@/pages/News";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/tools" component={Tools} />
       <Route path="/training" component={Training} />
+      <Route path="/news" component={News} />
       <Route component={NotFound} />
     </Switch>
   );
