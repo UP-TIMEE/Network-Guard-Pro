@@ -7,6 +7,7 @@ export const translations = {
     nav: {
       home: "الرئيسية",
       tools: "أدوات الشبكات",
+      training: "التدريب",
       lightMode: "الوضع الفاتح",
       darkMode: "الوضع الداكن",
     },
@@ -70,6 +71,7 @@ export const translations = {
     nav: {
       home: "Home",
       tools: "Network Tools",
+      training: "Training",
       lightMode: "Light Mode",
       darkMode: "Dark Mode",
     },

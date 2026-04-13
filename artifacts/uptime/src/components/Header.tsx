@@ -26,8 +26,9 @@ export function Header() {
   }, [dark]);
 
   const navItems = [
-    { label: t("nav.home"), href: "/" },
-    { label: t("nav.tools"), href: "/tools" },
+    { label: t("nav.home"),     href: "/"         },
+    { label: t("nav.tools"),    href: "/tools"    },
+    { label: t("nav.training"), href: "/training" },
   ];
 
   const isRTL = lang === "ar";

@@ -4,7 +4,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { NewsSection } from "@/components/NewsSection";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Wrench, BookOpen, Rss, Zap, ArrowLeft, ArrowRight, Shield, Network, X, ArrowDown } from "lucide-react";
+import { Wrench, BookOpen, Rss, Zap, ArrowLeft, ArrowRight, Shield, Network, X, ArrowDown, GraduationCap } from "lucide-react";
 
 function UptimeLogo() {
   return (
@@ -178,20 +178,23 @@ export default function Home() {
                 </div>
               </Link>
 
-              {/* Card 2 — Training (coming soon) */}
-              <div
-                data-testid="card-training"
-                className="bg-card border border-border rounded-2xl p-6 opacity-60 h-full"
-              >
-                <div className="bg-muted rounded-xl p-3 w-fit mb-4">
-                  <BookOpen className="h-6 w-6 text-muted-foreground" />
+              {/* Card 2 — Training (live!) */}
+              <Link href="/training">
+                <div
+                  data-testid="card-training"
+                  className="group bg-card border border-border rounded-2xl p-6 h-full hover:border-primary/30 hover:shadow-md transition-all duration-200 cursor-pointer"
+                >
+                  <div className="bg-muted rounded-xl p-3 w-fit mb-4 group-hover:bg-primary/10 transition-colors">
+                    <GraduationCap className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  <h3 className="text-lg font-black mb-2 text-foreground">{t("home.card2Title")}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{t("home.card2Desc")}</p>
+                  <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-primary">
+                    <ArrowIcon className="h-3.5 w-3.5" />
+                    <span>{isRtl ? "ابدأ التدريب" : "Start Training"}</span>
+                  </div>
                 </div>
-                <h3 className="text-lg font-black mb-2 text-foreground">{t("home.card2Title")}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{t("home.card2Desc")}</p>
-                <div className="mt-4 inline-flex items-center text-xs font-semibold text-muted-foreground border border-border px-2.5 py-1 rounded-full">
-                  {t("home.soon")}
-                </div>
-              </div>
+              </Link>
 
               {/* Card 3 — News (now live!) */}
               <a
