@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   ShieldCheck, ShieldX, AlertTriangle, Lock, LockOpen,
   Mail, MousePointerClick, RefreshCw, Trophy, ChevronRight,
-  Eye, Flag, ExternalLink, CheckCircle, XCircle, Info,
+  Eye, Flag, ExternalLink, CheckCircle, XCircle, Info, Skull,
 } from "lucide-react";
 
 // ─────────────── Types ───────────────
@@ -107,6 +107,25 @@ function InboxScreen({
 }) {
   const [hover, setHover] = useState(false);
   const [senderClicked, setSenderClicked] = useState(false);
+  const [trapped, setTrapped] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+
+  // Auto-advance after trap is triggered
+  useEffect(() => {
+    if (!trapped) return;
+    if (countdown <= 0) {
+      onChoose("click");
+      return;
+    }
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [trapped, countdown, onChoose]);
+
+  const handleTrap = () => {
+    if (trapped) return;
+    setTrapped(true);
+    setCountdown(3);
+  };
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8" dir={isRtl ? "rtl" : "ltr"}>
@@ -121,8 +140,34 @@ function InboxScreen({
         </span>
       </div>
 
+      {/* ── TRAP BANNER ── */}
+      {trapped && (
+        <div className="mb-4 animate-in slide-in-from-top-2 fade-in duration-300">
+          <div className="flex items-start gap-3 bg-red-950/60 border border-red-500/50 rounded-2xl p-4 shadow-lg">
+            <div className="p-2 bg-red-500/20 rounded-xl flex-shrink-0">
+              <Skull className="h-6 w-6 text-red-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-black text-red-400 text-sm mb-1">
+                {isRtl ? "⚠️ لقد وقعت في الفخ!" : "⚠️ You fell for the trap!"}
+              </p>
+              <p className="text-xs text-red-300/80 leading-relaxed">
+                {isRtl
+                  ? "النقر على الروابط المشبوهة هو الخطوة الأولى نحو الاختراق. سيُنقَل حسابك الآن إلى صفحة تسجيل الدخول المزيفة لتعيش تجربة الهجوم كاملاً."
+                  : "Clicking suspicious links is the first step toward a breach. You will now be taken to the fake login page to experience the full attack."}
+              </p>
+              <p className="text-xs text-red-400/70 mt-2 font-mono">
+                {isRtl
+                  ? `الانتقال خلال ${countdown} ثانية...`
+                  : `Redirecting in ${countdown}s...`}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Email client shell */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xl">
+      <div className={`bg-card border rounded-2xl overflow-hidden shadow-xl transition-colors ${trapped ? "border-red-500/40" : "border-border"}`}>
 
         {/* Title bar */}
         <div className="bg-muted/60 px-4 py-2.5 flex items-center gap-2 border-b border-border">
@@ -160,7 +205,7 @@ function InboxScreen({
 
               {/* Headers */}
               <div className="space-y-1.5 text-sm">
-                {/* FROM — red flag 1 */}
+                {/* FROM — red flag: suspicious domain */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-muted-foreground w-16 text-xs flex-shrink-0">
                     {isRtl ? "من:" : "From:"}
@@ -205,41 +250,42 @@ function InboxScreen({
 
             {/* Body */}
             <div className="space-y-3 text-sm text-foreground leading-relaxed">
-              <p>
-                {isRtl
-                  ? "عزيزي الموظف،"
-                  : "Dear Employee,"}
-              </p>
+              <p>{isRtl ? "عزيزي الموظف،" : "Dear Employee,"}</p>
               <p>
                 {isRtl
                   ? "تم رصد نشاط غير اعتيادي على حسابك. لحماية بياناتك، يُرجى تحديث كلمة المرور خلال الـ 24 ساعة القادمة. الفشل في ذلك سيؤدي إلى تعليق الحساب مؤقتاً."
                   : "Unusual activity has been detected on your account. To protect your data, please update your password within the next 24 hours. Failure to do so will result in a temporary account suspension."}
               </p>
               <p className="text-muted-foreground text-xs">
-                {isRtl
-                  ? "— فريق دعم تقنية المعلومات"
-                  : "— IT Support Team"}
+                {isRtl ? "— فريق دعم تقنية المعلومات" : "— IT Support Team"}
               </p>
 
-              {/* CTA button — red flag 2 (hover) */}
+              {/* CTA button — TRAP DOOR */}
               <div className="pt-2">
                 <div className="relative inline-block">
                   <button
                     onMouseEnter={() => setHover(true)}
                     onMouseLeave={() => setHover(false)}
-                    className="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors cursor-default"
+                    onClick={handleTrap}
+                    disabled={trapped}
+                    className={`
+                      px-5 py-2.5 rounded-lg text-sm font-bold transition-colors
+                      ${trapped
+                        ? "bg-red-700 text-white cursor-not-allowed opacity-80"
+                        : "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"}
+                    `}
                   >
                     {isRtl ? "تحديث الآن" : "Update Now"}
                   </button>
-                  {/* Fake URL bar on hover */}
-                  {hover && (
+                  {/* Fake URL preview on hover */}
+                  {hover && !trapped && (
                     <div className="absolute bottom-full mb-1 start-0 bg-gray-900 text-red-400 text-xs font-mono px-2 py-1 rounded shadow-lg border border-red-500/30 whitespace-nowrap animate-in fade-in z-10 flex items-center gap-1">
                       <LockOpen className="h-3 w-3 flex-shrink-0" />
                       http://malicious-update.ru/reset-password?token=abc123
                     </div>
                   )}
                 </div>
-                {hover && (
+                {hover && !trapped && (
                   <p className="text-xs text-red-400 flex items-center gap-1 mt-1.5 animate-in fade-in">
                     <AlertTriangle className="h-3 w-3" />
                     {isRtl ? "الرابط يشير إلى موقع خارجي مشبوه!" : "Link points to a suspicious external site!"}
@@ -252,28 +298,34 @@ function InboxScreen({
       </div>
 
       {/* Hint */}
-      <div className="mt-4 flex items-start gap-2 text-xs text-muted-foreground bg-muted/30 rounded-xl p-3 border border-border">
-        <Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-        <span>{isRtl ? "مرر المؤشر على زر 'تحديث الآن' وانقر على عنوان المُرسِل لاستكشاف العلامات الحمراء." : "Hover over 'Update Now' and click the sender address to explore red flags."}</span>
-      </div>
+      {!trapped && (
+        <div className="mt-4 flex items-start gap-2 text-xs text-muted-foreground bg-muted/30 rounded-xl p-3 border border-border">
+          <Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+          <span>
+            {isRtl
+              ? "مرّر المؤشر على زر 'تحديث الآن' لرؤية الرابط الحقيقي. انقر على عنوان المُرسِل لفحصه. ثم اتخذ قرارك الصحيح."
+              : "Hover over 'Update Now' to reveal the real link. Click the sender address to inspect it. Then make the right call."}
+          </span>
+        </div>
+      )}
 
-      {/* Action buttons */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <button
-          onClick={() => onChoose("report")}
-          className="flex items-center justify-center gap-2.5 px-5 py-3.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors"
-        >
-          <Flag className="h-5 w-5" />
-          {isRtl ? "التبليغ عن تصيد احتيالي" : "Report as Phishing"}
-        </button>
-        <button
-          onClick={() => onChoose("click")}
-          className="flex items-center justify-center gap-2.5 px-5 py-3.5 bg-red-600/20 text-red-400 border border-red-500/40 rounded-xl font-semibold hover:bg-red-600/30 transition-colors"
-        >
-          <MousePointerClick className="h-5 w-5" />
-          {isRtl ? "الضغط على زر التحديث" : "Click the Update Button"}
-        </button>
-      </div>
+      {/* Action button — Report Phishing only (the correct action) */}
+      {!trapped && (
+        <div className="mt-6">
+          <button
+            onClick={() => onChoose("report")}
+            className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors"
+          >
+            <Flag className="h-5 w-5" />
+            {isRtl ? "التبليغ عن تصيد احتيالي" : "Report as Phishing"}
+          </button>
+          <p className="text-center text-xs text-muted-foreground mt-2">
+            {isRtl
+              ? "هذا هو الإجراء الصحيح الوحيد — أو جرّب النقر على زر التحديث داخل البريد لترى ماذا سيحدث"
+              : "This is the only correct action — or try clicking the Update button inside the email to see what happens"}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -306,7 +358,7 @@ function PhishingScreen({
 
   const handleSubmit = () => {
     setSubmitted(true);
-    setTimeout(() => onDone(found), 1200);
+    setTimeout(() => onDone(found), 400);
   };
 
   return (
@@ -457,14 +509,18 @@ function ResultScreen({
 }) {
   const score = calcScore(state);
 
-  const checks: { id: string; labelAr: string; labelEn: string; pass: boolean; pointsAr: string; pointsEn: string }[] = [
+  const fell = state.inboxChoice === "click";
+
+  const checks: { id: string; labelAr: string; labelEn: string; pass: boolean; pointsAr: string; pointsEn: string; penaltyAr?: string; penaltyEn?: string }[] = [
     {
       id: "inbox",
-      labelAr: "التعرف على بريد التصيد والإبلاغ عنه",
-      labelEn: "Identified and reported the phishing email",
+      labelAr: fell ? "نقرت على الرابط المشبوه داخل البريد" : "التعرف على بريد التصيد والإبلاغ عنه",
+      labelEn: fell ? "You clicked the suspicious link in the email" : "Identified and reported the phishing email",
       pass: state.inboxChoice === "report",
       pointsAr: "+٤٠ نقطة",
       pointsEn: "+40 pts",
+      penaltyAr: fell ? "−٤٠ نقطة (وقعت في الفخ)" : undefined,
+      penaltyEn: fell ? "−40 pts (fell for the trap)" : undefined,
     },
     {
       id: "url-bar",
@@ -506,13 +562,29 @@ function ResultScreen({
         </div>
 
         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-          {score >= 80
+          {fell
+            ? (isRtl
+                ? "وقعت في فخ التصيد ونقرت على الرابط الخبيث. هذا يُعرّض بياناتك للاختراق في الواقع الحقيقي."
+                : "You fell for the phishing trap and clicked the malicious link. In a real scenario this would expose your data.")
+            : score >= 80
             ? (isRtl ? "ممتاز! لديك وعي أمني عالٍ وقدرة على اكتشاف هجمات الهندسة الاجتماعية." : "Excellent! You have high security awareness and can detect social engineering attacks.")
             : score >= 50
             ? (isRtl ? "جيد. اكتشفت بعض الأخطاء لكن لا تزال بحاجة لتعزيز وعيك الأمني." : "Good. You spotted some errors but still need to strengthen your security awareness.")
             : (isRtl ? "يُنصح بالمزيد من التدريب. هجمات التصيد أكثر احترافاً مما تبدو عليه." : "More training recommended. Phishing attacks are more sophisticated than they appear.")}
         </p>
       </div>
+
+      {/* Trap context banner */}
+      {fell && (
+        <div className="mb-6 flex items-start gap-3 bg-red-950/40 border border-red-500/30 rounded-2xl p-4">
+          <Skull className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-red-300/80 leading-relaxed">
+            {isRtl
+              ? "بعد نقرك على الزر، تم توجيهك تلقائياً إلى صفحة تسجيل دخول مزيفة — هذا ما يحدث في الهجمات الحقيقية. المرحلة التالية كانت سرقة كلمة مرورك."
+              : "After clicking the button, you were automatically redirected to a fake login page — this is what happens in real attacks. The next step would have been stealing your password."}
+          </p>
+        </div>
+      )}
 
       {/* Check list */}
       <div className="space-y-2.5 mb-8">
@@ -530,6 +602,11 @@ function ResultScreen({
             {c.pass && (
               <span className="text-xs font-bold text-emerald-400">
                 {isRtl ? c.pointsAr : c.pointsEn}
+              </span>
+            )}
+            {!c.pass && (c.penaltyAr || c.penaltyEn) && (
+              <span className="text-xs font-bold text-red-400">
+                {isRtl ? c.penaltyAr : c.penaltyEn}
               </span>
             )}
           </div>
