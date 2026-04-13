@@ -6,16 +6,19 @@ import {
   ShieldCheck, ShieldX, AlertTriangle, Lock, LockOpen,
   Mail, MousePointerClick, RefreshCw, Trophy, ChevronRight,
   Eye, Flag, ExternalLink, CheckCircle, XCircle, Info, Skull,
+  Download,
 } from "lucide-react";
 
 // ─────────────── Types ───────────────
-type Step = "intro" | "inbox" | "phishing" | "result";
+type Step = "intro" | "inbox" | "phishing" | "malware-popup" | "result";
 type InboxChoice = "report" | "click" | null;
+type PopupChoice = "dismiss" | "install" | null;
 
 interface TrainingState {
   step: Step;
   inboxChoice: InboxChoice;
   foundErrors: Set<string>;
+  popupChoice: PopupChoice;
   hoverBtn: boolean;
 }
 
@@ -23,10 +26,15 @@ interface TrainingState {
 const ERROR_IDS = ["url-bar", "no-lock", "wrong-logo"] as const;
 type ErrorId = typeof ERROR_IDS[number];
 
+// Scoring (total = 100):
+//   Inbox report:           25 pts
+//   Each phishing error:    15 pts × 3 = 45 pts
+//   Popup dismissed:        30 pts
 function calcScore(state: TrainingState): number {
   let score = 0;
-  if (state.inboxChoice === "report") score += 40;
-  ERROR_IDS.forEach((id) => { if (state.foundErrors.has(id)) score += 20; });
+  if (state.inboxChoice === "report") score += 25;
+  ERROR_IDS.forEach((id) => { if (state.foundErrors.has(id)) score += 15; });
+  if (state.popupChoice === "dismiss") score += 30;
   return score;
 }
 
@@ -74,10 +82,10 @@ function IntroScreen({ isRtl, onStart }: { isRtl: boolean; onStart: () => void }
 
       <div className="w-full grid grid-cols-2 gap-3 text-start" dir={isRtl ? "rtl" : "ltr"}>
         {[
-          { icon: Mail,            label: isRtl ? "سيناريو ١: بريد مفخّخ"       : "Scenario 1: Phishing Email" },
-          { icon: LockOpen,        label: isRtl ? "سيناريو ٢: صفحة دخول مزيفة"  : "Scenario 2: Fake Login Page" },
-          { icon: Eye,             label: isRtl ? "اكتشف العلامات الحمراء"       : "Spot the red flags" },
-          { icon: Trophy,          label: isRtl ? "قيّم مستوى وعيك الأمني"       : "Evaluate your security level" },
+          { icon: Mail,            label: isRtl ? "سيناريو ١: بريد مفخّخ"          : "Scenario 1: Phishing Email"   },
+          { icon: LockOpen,        label: isRtl ? "سيناريو ٢: صفحة دخول مزيفة"    : "Scenario 2: Fake Login Page"  },
+          { icon: Download,        label: isRtl ? "سيناريو ٣: نافذة تحديث خبيثة"  : "Scenario 3: Fake Update Alert" },
+          { icon: Trophy,          label: isRtl ? "قيّم مستوى وعيك الأمني"          : "Evaluate your security level" },
         ].map(({ icon: Icon, label }) => (
           <div key={label} className="flex items-center gap-2.5 bg-card border border-border rounded-xl p-3">
             <Icon className="h-4 w-4 text-primary flex-shrink-0" />
@@ -497,6 +505,188 @@ function PhishingScreen({
   );
 }
 
+// ── Scenario 3: Malware Pop-up ──
+function MalwarePopupScreen({
+  isRtl,
+  onChoose,
+}: {
+  isRtl: boolean;
+  onChoose: (choice: "dismiss" | "install") => void;
+}) {
+  const [hoverDownload, setHoverDownload] = useState(false);
+  const [installed, setInstalled] = useState(false);
+
+  const handleInstall = () => {
+    if (installed) return;
+    setInstalled(true);
+    setTimeout(() => onChoose("install"), 2200);
+  };
+  const handleDismiss = () => onChoose("dismiss");
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-8" dir={isRtl ? "rtl" : "ltr"}>
+      {/* Step badge */}
+      <div className="flex items-center gap-2 mb-6 text-orange-400">
+        <AlertTriangle className="h-4 w-4" />
+        <span className="text-sm font-semibold">
+          {isRtl ? "السيناريو الثالث — نافذة التحديث الأمني" : "Scenario 3 — Security Update Alert"}
+        </span>
+        <span className="ms-auto text-xs text-muted-foreground">
+          {isRtl ? "فكّر قبل أن تضغط" : "Think before you click"}
+        </span>
+      </div>
+
+      {/* Infected screen state */}
+      {installed && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-400">
+          <div className="w-full bg-red-950/80 border-2 border-red-500/60 rounded-2xl p-8 space-y-5 text-center">
+            <div className="p-4 bg-red-500/10 rounded-full w-fit mx-auto">
+              <Skull className="h-14 w-14 text-red-400" />
+            </div>
+            <h2 className="text-2xl font-black text-red-400">
+              {isRtl ? "⚠️ تم تحميل برمجية خبيثة!" : "⚠️ Malware Downloaded!"}
+            </h2>
+            <p className="text-sm text-red-300/80 max-w-sm mx-auto leading-relaxed">
+              {isRtl
+                ? "لقد قمت بتحميل برمجية خبيثة! التحديثات الرسمية لا تظهر أبداً داخل المتصفح بهذه الطريقة. المصادر الموثوقة هي Windows Update وموقع الشركة الرسمي فقط."
+                : "You downloaded malware! Legitimate security updates never appear as browser pop-ups. Only trust Windows Update and the official vendor website."}
+            </p>
+            <p className="text-xs text-muted-foreground animate-pulse font-mono">
+              {isRtl ? "الانتقال إلى النتيجة النهائية..." : "Moving to final results..."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Pop-up wrapped in a fake browser */}
+      {!installed && (
+        <>
+          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xl relative">
+            {/* Blurred background "browser content" — height must exceed popup height */}
+            <div className="p-6 space-y-3 blur-sm opacity-30 pointer-events-none select-none min-h-[460px]">
+              <div className="h-4 bg-muted rounded w-3/4" />
+              <div className="h-3 bg-muted rounded w-1/2" />
+              <div className="h-3 bg-muted rounded w-2/3" />
+              <div className="h-24 bg-muted/50 rounded mt-4" />
+              <div className="h-3 bg-muted rounded w-1/3" />
+              <div className="h-3 bg-muted rounded w-2/4" />
+              <div className="h-3 bg-muted rounded w-1/2" />
+              <div className="h-16 bg-muted/40 rounded mt-2" />
+            </div>
+
+            {/* Dark overlay + the popup */}
+            <div className="absolute inset-0 bg-black/65 flex items-center justify-center p-4">
+              <div
+                className="bg-[#1a1a2e] border border-red-500/50 rounded-lg shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 fade-in duration-300"
+                dir="ltr"
+              >
+                {/* ── Window title bar (Windows Defender style, TYPO in "WIndows") ── */}
+                <div className="bg-gradient-to-r from-red-800 to-red-700 px-3 py-1.5 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <ShieldX className="h-3.5 w-3.5 text-white flex-shrink-0" />
+                    {/* DELIBERATE TYPO: WIndows (capital I) */}
+                    <span className="text-[11px] text-white font-bold font-mono truncate">
+                      WIndows Defender Security Center
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleDismiss}
+                    className="text-white/70 hover:text-white hover:bg-white/20 rounded px-1.5 py-0.5 text-xs font-black transition-colors flex-shrink-0 leading-none"
+                    title={isRtl ? "إغلاق" : "Close"}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* ── Body ── */}
+                <div className="p-5 space-y-4">
+                  {/* Header */}
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-orange-500/20 rounded-lg flex-shrink-0">
+                      <AlertTriangle className="h-8 w-8 text-orange-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-white leading-snug">
+                        {isRtl
+                          ? "⚠️ تنبيه أمني عاجل من UPTIME Defender"
+                          : "⚠️ Urgent Security Alert from UPTIME Defender"}
+                      </h3>
+                      <p className="text-[10px] text-red-400 mt-0.5 font-mono">
+                        Threat ID: TROJ_GENERIC.2025.04XF
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Body text */}
+                  <p className="text-xs text-gray-300 leading-relaxed" dir={isRtl ? "rtl" : "ltr"}>
+                    {isRtl
+                      ? "تم اكتشاف نشاط مشبوه على جهازك. قد تكون بياناتك معرضة للخطر الآن. يرجى تثبيت التحديث الأمني الضروري فوراً لحماية ملفاتك ومعلوماتك الشخصية."
+                      : "Suspicious activity has been detected on your device. Your data may be at risk right now. Please install the required security update immediately to protect your files and personal information."}
+                  </p>
+
+                  {/* Fake urgency bar */}
+                  <div className="space-y-1">
+                    <div className="bg-gray-800 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-gradient-to-r from-orange-500 to-red-500 h-1.5 w-[78%] animate-pulse" />
+                    </div>
+                    <p className="text-[10px] text-red-400 text-center font-mono uppercase tracking-wide">
+                      {isRtl ? "خطر — مستوى التهديد: حرج" : "DANGER — Threat Level: CRITICAL"}
+                    </p>
+                  </div>
+
+                  {/* ── TRAP: Download button ── */}
+                  <div className="relative">
+                    <button
+                      onMouseEnter={() => setHoverDownload(true)}
+                      onMouseLeave={() => setHoverDownload(false)}
+                      onClick={handleInstall}
+                      className="w-full py-2.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                      dir={isRtl ? "rtl" : "ltr"}
+                    >
+                      <Download className="h-3.5 w-3.5 flex-shrink-0" />
+                      {isRtl
+                        ? "تحميل وتثبيت التحديث الآن (موصى به)"
+                        : "Download & Install Update Now (Recommended)"}
+                    </button>
+                    {/* Hover reveals suspicious URL */}
+                    {hoverDownload && (
+                      <div className="absolute bottom-full mb-1 start-0 end-0 bg-gray-950 text-xs font-mono px-2 py-1.5 rounded border border-gray-700 animate-in fade-in z-20 flex items-center gap-1 overflow-hidden">
+                        <LockOpen className="h-3 w-3 flex-shrink-0 text-red-400" />
+                        <span className="truncate text-red-400">
+                          download.free-antivirus-update.xyz/malware_installer_v2.exe
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ── CORRECT: Dismiss button ── */}
+                  <button
+                    onClick={handleDismiss}
+                    className="w-full py-1.5 text-gray-500 hover:text-gray-300 text-[11px] transition-colors underline underline-offset-2 cursor-pointer"
+                    dir={isRtl ? "rtl" : "ltr"}
+                  >
+                    {isRtl ? "تجاهل (غير آمن)" : "Ignore (Not Safe)"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Hint */}
+          <div className="mt-4 flex items-start gap-2 text-xs text-muted-foreground bg-muted/30 rounded-xl p-3 border border-border">
+            <Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+            <span>
+              {isRtl
+                ? "مرّر المؤشر على زر التحميل لكشف الرابط الحقيقي. ابحث عن أخطاء دقيقة في عنوان النافذة وعنوان URL قبل اتخاذ أي قرار."
+                : "Hover over the download button to reveal the real URL. Look for subtle errors in the window title and URL before making any decision."}
+            </span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Results Screen ──
 function ResultScreen({
   isRtl,
@@ -510,41 +700,55 @@ function ResultScreen({
   const score = calcScore(state);
 
   const fell = state.inboxChoice === "click";
+  const installedMalware = state.popupChoice === "install";
 
-  const checks: { id: string; labelAr: string; labelEn: string; pass: boolean; pointsAr: string; pointsEn: string; penaltyAr?: string; penaltyEn?: string }[] = [
+  const checks: {
+    id: string; labelAr: string; labelEn: string; pass: boolean;
+    pointsAr: string; pointsEn: string; penaltyAr?: string; penaltyEn?: string;
+  }[] = [
     {
       id: "inbox",
       labelAr: fell ? "نقرت على الرابط المشبوه داخل البريد" : "التعرف على بريد التصيد والإبلاغ عنه",
       labelEn: fell ? "You clicked the suspicious link in the email" : "Identified and reported the phishing email",
       pass: state.inboxChoice === "report",
-      pointsAr: "+٤٠ نقطة",
-      pointsEn: "+40 pts",
-      penaltyAr: fell ? "−٤٠ نقطة (وقعت في الفخ)" : undefined,
-      penaltyEn: fell ? "−40 pts (fell for the trap)" : undefined,
+      pointsAr: "+٢٥ نقطة",
+      pointsEn: "+25 pts",
+      penaltyAr: fell ? "وقعت في فخ البريد" : undefined,
+      penaltyEn: fell ? "Fell for the email trap" : undefined,
     },
     {
       id: "url-bar",
       labelAr: "اكتشاف عنوان URL المزيّف",
       labelEn: "Detected the fake URL",
       pass: state.foundErrors.has("url-bar"),
-      pointsAr: "+٢٠ نقطة",
-      pointsEn: "+20 pts",
+      pointsAr: "+١٥ نقطة",
+      pointsEn: "+15 pts",
     },
     {
       id: "no-lock",
       labelAr: "ملاحظة غياب قفل HTTPS",
       labelEn: "Noticed the missing HTTPS lock",
       pass: state.foundErrors.has("no-lock"),
-      pointsAr: "+٢٠ نقطة",
-      pointsEn: "+20 pts",
+      pointsAr: "+١٥ نقطة",
+      pointsEn: "+15 pts",
     },
     {
       id: "wrong-logo",
       labelAr: "اكتشاف الشعار المزوّر",
       labelEn: "Spotted the fake logo",
       pass: state.foundErrors.has("wrong-logo"),
-      pointsAr: "+٢٠ نقطة",
-      pointsEn: "+20 pts",
+      pointsAr: "+١٥ نقطة",
+      pointsEn: "+15 pts",
+    },
+    {
+      id: "popup",
+      labelAr: installedMalware ? "قمت بتحميل التحديث الخبيث" : "رفض تثبيت التحديث المزيّف",
+      labelEn: installedMalware ? "You installed the fake update" : "Dismissed the fake security update",
+      pass: state.popupChoice === "dismiss",
+      pointsAr: "+٣٠ نقطة",
+      pointsEn: "+30 pts",
+      penaltyAr: installedMalware ? "حمّلت برمجية خبيثة" : undefined,
+      penaltyEn: installedMalware ? "Downloaded malware" : undefined,
     },
   ];
 
@@ -562,26 +766,38 @@ function ResultScreen({
         </div>
 
         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-          {fell
+          {(fell || installedMalware)
             ? (isRtl
-                ? "وقعت في فخ التصيد ونقرت على الرابط الخبيث. هذا يُعرّض بياناتك للاختراق في الواقع الحقيقي."
-                : "You fell for the phishing trap and clicked the malicious link. In a real scenario this would expose your data.")
+                ? "وقعت في أحد فخاخ الهندسة الاجتماعية. تذكّر: المهاجمون يستغلون الضغط النفسي والإلحاح لجعلك تتصرف دون تفكير."
+                : "You fell for one or more social engineering traps. Remember: attackers exploit urgency and pressure to make you act without thinking.")
             : score >= 80
             ? (isRtl ? "ممتاز! لديك وعي أمني عالٍ وقدرة على اكتشاف هجمات الهندسة الاجتماعية." : "Excellent! You have high security awareness and can detect social engineering attacks.")
             : score >= 50
             ? (isRtl ? "جيد. اكتشفت بعض الأخطاء لكن لا تزال بحاجة لتعزيز وعيك الأمني." : "Good. You spotted some errors but still need to strengthen your security awareness.")
-            : (isRtl ? "يُنصح بالمزيد من التدريب. هجمات التصيد أكثر احترافاً مما تبدو عليه." : "More training recommended. Phishing attacks are more sophisticated than they appear.")}
+            : (isRtl ? "يُنصح بالمزيد من التدريب. هجمات الهندسة الاجتماعية أكثر احترافاً مما تبدو عليه." : "More training recommended. Social engineering attacks are more sophisticated than they appear.")}
         </p>
       </div>
 
-      {/* Trap context banner */}
+      {/* Email trap banner */}
       {fell && (
-        <div className="mb-6 flex items-start gap-3 bg-red-950/40 border border-red-500/30 rounded-2xl p-4">
+        <div className="mb-3 flex items-start gap-3 bg-red-950/40 border border-red-500/30 rounded-2xl p-4">
           <Skull className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-red-300/80 leading-relaxed">
             {isRtl
-              ? "بعد نقرك على الزر، تم توجيهك تلقائياً إلى صفحة تسجيل دخول مزيفة — هذا ما يحدث في الهجمات الحقيقية. المرحلة التالية كانت سرقة كلمة مرورك."
-              : "After clicking the button, you were automatically redirected to a fake login page — this is what happens in real attacks. The next step would have been stealing your password."}
+              ? "نقرت على الرابط الخبيث داخل البريد — تم توجيهك تلقائياً إلى صفحة مزيفة. في الهجمات الحقيقية كانت كلمة مرورك ستُسرق."
+              : "You clicked the malicious link in the email — you were redirected to a fake page. In a real attack your password would have been stolen."}
+          </p>
+        </div>
+      )}
+
+      {/* Malware installed banner */}
+      {installedMalware && (
+        <div className="mb-3 flex items-start gap-3 bg-orange-950/40 border border-orange-500/30 rounded-2xl p-4">
+          <Download className="h-5 w-5 text-orange-400 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-orange-300/80 leading-relaxed">
+            {isRtl
+              ? "قمت بتحميل التحديث الخبيث! التحديثات الرسمية لا تظهر أبداً كنوافذ منبثقة داخل المتصفح. استخدم دائماً Windows Update أو الموقع الرسمي للمورّد."
+              : "You installed fake malware! Legitimate updates never appear as browser pop-ups. Always use Windows Update or the official vendor website."}
           </p>
         </div>
       )}
@@ -621,8 +837,20 @@ function ResultScreen({
         </h4>
         <ul className="space-y-1.5 text-xs text-muted-foreground">
           {(isRtl
-            ? ["تحقق دائماً من دومين المُرسِل قبل النقر على أي رابط.", "لا تثق بأي رسالة تطلب منك التصرف العاجل.", "تحقق من HTTPS 🔒 في شريط العنوان قبل إدخال بياناتك.", "عند الشك، أبلغ قسم أمن المعلومات فوراً."]
-            : ["Always verify the sender's domain before clicking any link.", "Don't trust emails that demand urgent action.", "Verify HTTPS 🔒 in the address bar before entering credentials.", "When in doubt, report to your IT Security team immediately."]
+            ? [
+                "تحقق دائماً من دومين المُرسِل قبل النقر على أي رابط.",
+                "لا تثق بأي رسالة تطلب منك التصرف العاجل.",
+                "تحقق من HTTPS 🔒 في شريط العنوان قبل إدخال بياناتك.",
+                "التحديثات الرسمية لا تظهر أبداً كنوافذ منبثقة في المتصفح.",
+                "عند الشك، أبلغ قسم أمن المعلومات فوراً.",
+              ]
+            : [
+                "Always verify the sender's domain before clicking any link.",
+                "Don't trust messages that demand urgent action.",
+                "Verify HTTPS 🔒 in the address bar before entering credentials.",
+                "Legitimate updates never appear as browser pop-ups.",
+                "When in doubt, report to your IT Security team immediately.",
+              ]
           ).map((tip) => (
             <li key={tip} className="flex items-start gap-1.5">
               <ExternalLink className="h-3 w-3 flex-shrink-0 mt-0.5 text-primary" />
@@ -652,31 +880,33 @@ export default function Training() {
     step: "intro",
     inboxChoice: null,
     foundErrors: new Set(),
+    popupChoice: null,
     hoverBtn: false,
   });
 
   const handleInboxChoice = (choice: InboxChoice) => {
-    if (choice === "report") {
-      setState((s) => ({ ...s, inboxChoice: "report", step: "phishing" }));
-    } else {
-      setState((s) => ({ ...s, inboxChoice: "click", step: "phishing" }));
-    }
+    setState((s) => ({ ...s, inboxChoice: choice, step: "phishing" }));
   };
 
   const handlePhishingDone = (found: Set<string>) => {
-    setState((s) => ({ ...s, foundErrors: found, step: "result" }));
+    setState((s) => ({ ...s, foundErrors: found, step: "malware-popup" }));
+  };
+
+  const handlePopupChoice = (choice: "dismiss" | "install") => {
+    setState((s) => ({ ...s, popupChoice: choice, step: "result" }));
   };
 
   const handleRestart = () => {
-    setState({ step: "intro", inboxChoice: null, foundErrors: new Set(), hoverBtn: false });
+    setState({ step: "intro", inboxChoice: null, foundErrors: new Set(), popupChoice: null, hoverBtn: false });
   };
 
-  // Step indicator
+  // Step indicator (5 steps)
   const steps = [
-    { key: "intro",    labelAr: "مقدمة",      labelEn: "Intro"    },
-    { key: "inbox",    labelAr: "البريد",      labelEn: "Email"    },
-    { key: "phishing", labelAr: "صفحة الدخول", labelEn: "Login"    },
-    { key: "result",   labelAr: "النتيجة",     labelEn: "Result"   },
+    { key: "intro",         labelAr: "مقدمة",      labelEn: "Intro"    },
+    { key: "inbox",         labelAr: "البريد",      labelEn: "Email"    },
+    { key: "phishing",      labelAr: "صفحة الدخول", labelEn: "Login"    },
+    { key: "malware-popup", labelAr: "النافذة",     labelEn: "Pop-up"   },
+    { key: "result",        labelAr: "النتيجة",     labelEn: "Result"   },
   ];
   const stepIdx = steps.findIndex((s) => s.key === state.step);
 
@@ -723,10 +953,11 @@ export default function Training() {
 
         {/* Active screen */}
         <div className="container mx-auto max-w-2xl">
-          {state.step === "intro"    && <IntroScreen    isRtl={isRtl} onStart={() => setState((s) => ({ ...s, step: "inbox" }))} />}
-          {state.step === "inbox"    && <InboxScreen    isRtl={isRtl} onChoose={handleInboxChoice} />}
-          {state.step === "phishing" && <PhishingScreen isRtl={isRtl} onDone={handlePhishingDone} />}
-          {state.step === "result"   && <ResultScreen   isRtl={isRtl} state={state} onRestart={handleRestart} />}
+          {state.step === "intro"         && <IntroScreen        isRtl={isRtl} onStart={() => setState((s) => ({ ...s, step: "inbox" }))} />}
+          {state.step === "inbox"         && <InboxScreen        isRtl={isRtl} onChoose={handleInboxChoice} />}
+          {state.step === "phishing"      && <PhishingScreen     isRtl={isRtl} onDone={handlePhishingDone} />}
+          {state.step === "malware-popup" && <MalwarePopupScreen isRtl={isRtl} onChoose={handlePopupChoice} />}
+          {state.step === "result"        && <ResultScreen       isRtl={isRtl} state={state} onRestart={handleRestart} />}
         </div>
       </main>
 
