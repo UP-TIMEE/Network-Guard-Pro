@@ -31,31 +31,21 @@ export function Header() {
     { label: t("nav.training"), href: "/training" },
   ];
 
-  const isRTL = lang === "ar";
-
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Left side (LTR) / Right side in RTL: theme + language */}
-        <div className={`flex items-center gap-2 ${isRTL ? "order-first" : "order-last"}`}>
-          <button
-            onClick={() => setDark((d) => !d)}
-            data-testid="button-theme-toggle"
-            className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            title={dark ? t("nav.lightMode") : t("nav.darkMode")}
-          >
-            {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
-          <button
-            onClick={() => setLang(lang === "ar" ? "en" : "ar")}
-            data-testid="button-lang-toggle"
-            className="text-xs text-muted-foreground border border-border rounded px-2 py-0.5 cursor-pointer hover:border-primary/50 hover:text-primary transition-colors select-none font-mono"
-          >
-            {lang === "ar" ? "EN" : "AR"}
-          </button>
-        </div>
 
-        {/* Center: nav links (hidden on mobile) */}
+        {/* Logo — DOM-first → appears on reading-start (RIGHT in RTL, LEFT in LTR) */}
+        <Link href="/">
+          <div className="flex items-center gap-2 cursor-pointer" data-testid="nav-logo">
+            <div className="bg-foreground rounded-lg p-1.5">
+              <Shield className="h-5 w-5 text-background" />
+            </div>
+            <span className="text-xl font-black text-foreground tracking-widest">UPTIME</span>
+          </div>
+        </Link>
+
+        {/* Center nav links (hidden on mobile) */}
         <nav className="hidden md:flex items-center gap-1">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href}>
@@ -73,27 +63,33 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Right side (LTR) / Left side RTL: logo */}
-        <Link href="/">
-          <div
-            className={`flex items-center gap-2 cursor-pointer ${isRTL ? "order-last" : "order-first"}`}
-            data-testid="nav-logo"
+        {/* Controls — DOM-last → appears on reading-end (LEFT in RTL, RIGHT in LTR) */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setDark((d) => !d)}
+            data-testid="button-theme-toggle"
+            className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title={dark ? t("nav.lightMode") : t("nav.darkMode")}
           >
-            <div className="bg-foreground rounded-lg p-1.5">
-              <Shield className="h-5 w-5 text-background" />
-            </div>
-            <span className="text-xl font-black text-foreground tracking-widest">UPTIME</span>
-          </div>
-        </Link>
+            {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+          <button
+            onClick={() => setLang(lang === "ar" ? "en" : "ar")}
+            data-testid="button-lang-toggle"
+            className="text-xs text-muted-foreground border border-border rounded px-2 py-0.5 cursor-pointer hover:border-primary/50 hover:text-primary transition-colors select-none font-mono"
+          >
+            {lang === "ar" ? "EN" : "AR"}
+          </button>
 
-        {/* Mobile menu button */}
-        <button
-          className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors"
-          onClick={() => setMenuOpen(!menuOpen)}
-          data-testid="button-mobile-menu"
-        >
-          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+          {/* Mobile menu button */}
+          <button
+            className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setMenuOpen(!menuOpen)}
+            data-testid="button-mobile-menu"
+          >
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile nav */}

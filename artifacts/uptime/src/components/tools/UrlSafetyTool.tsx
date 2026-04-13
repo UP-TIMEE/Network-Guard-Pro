@@ -35,7 +35,7 @@ export function UrlSafetyTool() {
           dir="ltr"
         />
         <Button type="submit" disabled={isLoading} data-testid="button-submit-url">
-          {isLoading ? <Spinner className="ml-2" /> : null}
+          {isLoading ? <Spinner className="ms-2" /> : null}
           فحص
         </Button>
       </form>

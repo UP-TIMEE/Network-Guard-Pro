@@ -35,7 +35,7 @@ export function DnsTool() {
           dir="ltr"
         />
         <Button type="submit" disabled={isLoading} data-testid="button-submit-dns">
-          {isLoading ? <Spinner className="ml-2" /> : null}
+          {isLoading ? <Spinner className="ms-2" /> : null}
           فحص
         </Button>
       </form>
