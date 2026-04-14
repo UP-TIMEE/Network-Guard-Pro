@@ -490,7 +490,15 @@ const rssParser = new Parser({
 const GOOGLE_NEWS_URL =
   "https://news.google.com/rss/search?q=%D8%A7%D9%84%D8%A3%D9%85%D9%86+%D8%A7%D9%84%D8%B3%D9%8A%D8%A8%D8%B1%D8%A7%D9%86%D9%8A+OR+%D8%AB%D8%BA%D8%B1%D8%A9+%D8%A3%D9%85%D9%86%D9%8A%D8%A9&hl=ar&gl=SA&ceid=SA:ar";
 
-// ─── Static fallback cybersecurity news (shown when live feed is sparse) ────
+/** Strip HTML tags and collapse whitespace */
+function stripHtml(raw: string): string {
+  return raw
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&[a-z#0-9]+;/gi, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 router.get("/news", async (req, res) => {
   const limit = Math.min(Number(req.query["limit"] ?? 15), 15);
 
@@ -505,11 +513,21 @@ router.get("/news", async (req, res) => {
       const title  = lastDash !== -1 ? rawTitle.slice(0, lastDash).trim() : rawTitle;
       const source = lastDash !== -1 ? rawTitle.slice(lastDash + 3).trim() : "أخبار أمنية";
 
+      // Try to extract a real description — Google News rarely provides one,
+      // so fall back to a contextual Arabic phrase when absent
+      const rawDesc = (item as any).contentSnippet ?? (item as any).description ?? "";
+      const cleaned = stripHtml(rawDesc);
+      // Google News description is usually just the title repeated — detect and discard
+      const isSameAsTitle = title.length > 0 && cleaned.includes(title.slice(0, 20));
+      const description = (!isSameAsTitle && cleaned.length > 20)
+        ? cleaned.slice(0, 200) + (cleaned.length > 200 ? "…" : "")
+        : `للاطلاع على تفاصيل هذا التقرير الأمني الصادر عن ${source}، اضغط على رابط القراءة الكاملة.`;
+
       return {
         title,
-        link:        item.link ?? "",
-        description: "",
-        date:        item.isoDate ?? item.pubDate ?? new Date().toISOString(),
+        link:  item.link ?? "",
+        description,
+        date:  item.isoDate ?? item.pubDate ?? new Date().toISOString(),
         source,
       };
     });

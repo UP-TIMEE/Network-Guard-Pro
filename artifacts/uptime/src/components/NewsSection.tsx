@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { ExternalLink, RefreshCw, AlertTriangle, Calendar, Globe, Rss, ShieldAlert } from "lucide-react";
+import { ExternalLink, RefreshCw, AlertTriangle, Calendar, Rss, ShieldAlert } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -12,10 +12,25 @@ interface NewsItem {
   source: string;
 }
 
-const SOURCE_COLOR: Record<string, string> = {
-  "البوابة التقنية": "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  "عالم التقنية":   "bg-violet-500/10 text-violet-400 border-violet-500/20",
-};
+const COLOR_PALETTE = [
+  "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  "bg-violet-500/10 text-violet-400 border-violet-500/20",
+  "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+  "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  "bg-rose-500/10 text-rose-400 border-rose-500/20",
+  "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+  "bg-teal-500/10 text-teal-400 border-teal-500/20",
+];
+
+/** Returns a consistent color for a given source name via simple char-code hash */
+function getSourceColor(source: string): string {
+  let hash = 0;
+  for (let i = 0; i < source.length; i++) {
+    hash = (hash * 31 + source.charCodeAt(i)) & 0x7fffffff;
+  }
+  return COLOR_PALETTE[hash % COLOR_PALETTE.length];
+}
 
 function formatDate(iso: string, lang: string): string {
   try {
@@ -98,18 +113,11 @@ export function NewsSection() {
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            {/* Sources legend */}
-            <div className="flex items-center gap-2">
-              <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-              {["البوابة التقنية", "عالم التقنية"].map((src) => (
-                <span
-                  key={src}
-                  className={`text-xs px-2.5 py-0.5 rounded-full border font-medium ${SOURCE_COLOR[src] ?? "bg-muted text-muted-foreground border-border"}`}
-                >
-                  {src}
-                </span>
-              ))}
-            </div>
+            {/* Google News badge */}
+            <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border bg-red-500/10 text-red-400 border-red-500/20 font-medium">
+              <Rss className="h-3 w-3" />
+              Google News
+            </span>
 
             {/* Last fetched + Refresh */}
             <div className="flex items-center gap-2">
@@ -181,7 +189,7 @@ export function NewsSection() {
                     `}
                   >
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full border font-semibold leading-tight text-center ${SOURCE_COLOR[item.source] ?? "bg-muted text-muted-foreground border-border"}`}
+                      className={`text-xs px-2 py-0.5 rounded-full border font-semibold leading-tight text-center ${getSourceColor(item.source)}`}
                     >
                       {item.source}
                     </span>
@@ -210,11 +218,9 @@ export function NewsSection() {
                       {item.title}
                     </h3>
 
-                    {item.description && (
-                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                        {item.description}
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground/80 leading-relaxed line-clamp-2">
+                      {item.description}
+                    </p>
                   </div>
 
                 </div>
