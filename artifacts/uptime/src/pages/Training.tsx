@@ -3,11 +3,12 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { RapidFireLab } from "@/components/RapidFireLab";
+import TrafficAnalyzer from "@/components/TrafficAnalyzer";
 import {
   ShieldCheck, ShieldX, AlertTriangle, Lock, LockOpen,
   Mail, MousePointerClick, RefreshCw, Trophy, ChevronRight,
   Eye, Flag, ExternalLink, CheckCircle, XCircle, Info, Skull,
-  Download, Zap,
+  Download, Zap, Terminal,
 } from "lucide-react";
 
 // ─────────────── Types ───────────────
@@ -902,7 +903,7 @@ export default function Training() {
   };
 
   // ── Tab state ──
-  const [activeTab, setActiveTab] = useState<"social" | "rapid">("social");
+  const [activeTab, setActiveTab] = useState<"social" | "rapid" | "traffic">("social");
 
   // Step indicator (5 steps) — social engineering tab
   const steps = [
@@ -931,7 +932,7 @@ export default function Training() {
             </p>
 
             {/* ── Module tabs ── */}
-            <div className="flex gap-2 p-1 bg-muted/40 border border-border rounded-xl w-fit">
+            <div className="flex flex-wrap gap-2 p-1 bg-muted/40 border border-border rounded-xl w-fit">
               <button
                 onClick={() => setActiveTab("social")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
@@ -953,6 +954,17 @@ export default function Training() {
               >
                 <Zap className="h-4 w-4" />
                 {isRtl ? "مختبر القرارات السريعة" : "Rapid-Fire Lab"}
+              </button>
+              <button
+                onClick={() => setActiveTab("traffic")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  activeTab === "traffic"
+                    ? "bg-card border border-border shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Terminal className="h-4 w-4" />
+                {isRtl ? "محلل حركة الشبكة" : "Traffic Analyzer"}
               </button>
             </div>
 
@@ -995,6 +1007,11 @@ export default function Training() {
             </>
           )}
           {activeTab === "rapid" && <RapidFireLab isRtl={isRtl} />}
+          {activeTab === "traffic" && (
+            <div className="py-8 px-4">
+              <TrafficAnalyzer />
+            </div>
+          )}
         </div>
       </main>
 
