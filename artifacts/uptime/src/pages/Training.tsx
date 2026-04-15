@@ -5,13 +5,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { RapidFireLab } from "@/components/RapidFireLab";
 import TrafficAnalyzer from "@/components/TrafficAnalyzer";
 import SocialEngineeringLab from "@/components/SocialEngineeringLab";
-import { ShieldCheck, Mail, Zap, Terminal } from "lucide-react";
+import LiveChatSim from "@/components/LiveChatSim";
+import { ShieldCheck, Mail, Zap, Terminal, MessageSquare } from "lucide-react";
 
 export default function Training() {
   const { dir } = useLanguage();
   const isRtl = dir === "rtl";
 
-  const [activeTab, setActiveTab] = useState<"social" | "rapid" | "traffic">("social");
+  const [activeTab, setActiveTab] = useState<"social" | "rapid" | "traffic" | "chat">("social");
 
   return (
     <div className="min-h-screen flex flex-col bg-background" dir={dir}>
@@ -32,7 +33,7 @@ export default function Training() {
             </p>
 
             {/* ── Module tabs ── */}
-            <div className="flex flex-wrap gap-2 p-1 bg-muted/40 border border-border rounded-xl w-fit">
+            <div className="flex flex-wrap gap-2 p-1 bg-muted/40 border border-border rounded-xl">
               <button
                 onClick={() => setActiveTab("social")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
@@ -66,6 +67,17 @@ export default function Training() {
                 <Terminal className="h-4 w-4" />
                 {isRtl ? "محلل حركة الشبكة" : "Traffic Analyzer"}
               </button>
+              <button
+                onClick={() => setActiveTab("chat")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  activeTab === "chat"
+                    ? "bg-card border border-border shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <MessageSquare className="h-4 w-4" />
+                {isRtl ? "محاكي المحادثة المباشرة" : "Live Chat Sim"}
+              </button>
             </div>
           </div>
         </div>
@@ -86,6 +98,12 @@ export default function Training() {
         {activeTab === "traffic" && (
           <div className="container mx-auto max-w-5xl px-4 py-8">
             <TrafficAnalyzer />
+          </div>
+        )}
+
+        {activeTab === "chat" && (
+          <div className="container mx-auto max-w-4xl px-4 py-8">
+            <LiveChatSim />
           </div>
         )}
       </main>
