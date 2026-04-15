@@ -90,6 +90,50 @@ const ROUNDS: RoundDef[] = [
       { src: "192.168.3.50", dst: "1.1.1.1",         proto: "DNS",   port: 53,  info: "Standard query A  npmjs.com",                       isMalicious: false, hintAr: "طلب DNS لـ npm — طبيعي لمطوري JavaScript." },
     ],
   },
+
+  // ══ ROUND 4 — SQL Injection ══
+  {
+    titleAr: "الجولة الرابعة — حقن قواعد البيانات (SQL Injection)",
+    successAr:
+      "ممتاز! رصدت هجوم SQL Injection — المهاجم أدرج أمراً برمجياً خبيثاً في رابط المتصفح (admin' OR '1'='1' --) محاولاً تجاوز حماية تسجيل الدخول. هذا النوع من الهجمات يستهدف قواعد البيانات مباشرةً عبر حقول الإدخال غير المحمية.",
+    malicious: {
+      src: "185.220.101.55", dst: "192.168.4.10",
+      proto: "HTTP", port: 80,
+      info: "GET /login?user=admin'%20OR%20'1'%3D'1'%20--&pass=x  [SQL_INJECTION]",
+      isMalicious: true, hintAr: "",
+    },
+    normals: [
+      { src: "192.168.4.20", dst: "192.168.4.10",   proto: "HTTP",  port: 80,  info: "GET /index.html  HTTP/1.1  200 OK",                          isMalicious: false, hintAr: "طلب صفحة رئيسية عبر HTTP — طبيعي ومتوقع." },
+      { src: "192.168.4.20", dst: "192.168.4.10",   proto: "HTTP",  port: 80,  info: "GET /styles.css  HTTP/1.1  200 OK",                          isMalicious: false, hintAr: "طلب ملف CSS — جزء طبيعي من تحميل الصفحة." },
+      { src: "192.168.4.20", dst: "192.168.4.10",   proto: "HTTP",  port: 80,  info: "GET /app.js  HTTP/1.1  200 OK",                             isMalicious: false, hintAr: "طلب ملف JavaScript — جزء طبيعي من تحميل الصفحة." },
+      { src: "192.168.4.35", dst: "8.8.8.8",        proto: "DNS",   port: 53,  info: "Standard query A  company-portal.net",                       isMalicious: false, hintAr: "طلب DNS لبوابة الشركة — طبيعي." },
+      { src: "192.168.4.20", dst: "192.168.4.10",   proto: "HTTP",  port: 80,  info: "GET /logo.png  HTTP/1.1  200 OK",                           isMalicious: false, hintAr: "طلب صورة شعار — طبيعي جداً." },
+      { src: "192.168.4.20", dst: "192.168.4.10",   proto: "HTTP",  port: 80,  info: "POST /login  HTTP/1.1  — user: alice@company.com",           isMalicious: false, hintAr: "طلب تسجيل دخول POST عادي — لا يحتوي على أوامر SQL." },
+      { src: "192.168.4.55", dst: "192.168.4.10",   proto: "HTTPS", port: 443, info: "TLS 1.3  GET /api/health  →  company-portal.net",           isMalicious: false, hintAr: "فحص صحة الخادم عبر HTTPS — نشاط نظام عادي." },
+    ],
+  },
+
+  // ══ ROUND 5 — C2 Callback ══
+  {
+    titleAr: "الجولة الخامسة — اتصال مشبوه بجهاز تحكم عن بعد (C2)",
+    successAr:
+      "أحسنت! رصدت اتصال C2 Callback — جهاز داخلي يُرسل 4.8 MB إلى IP خارجي مجهول (45.142.212.100) على المنفذ 4444 غير المعروف. هذا النمط يشير إلى إصابة ببرمجية خبيثة تتواصل مع خادم الهكر لتلقي الأوامر أو تسريب البيانات.",
+    malicious: {
+      src: "192.168.5.77", dst: "45.142.212.100",
+      proto: "TCP", port: 4444,
+      info: "ESTABLISHED  len=4,915,200 B (4.8 MB)  duration=47s  [SUSPICIOUS_C2_BEACON]",
+      isMalicious: true, hintAr: "",
+    },
+    normals: [
+      { src: "192.168.5.10", dst: "216.239.35.0",   proto: "NTP",   port: 123, info: "NTP sync request  →  time.google.com  [stratum 2]",          isMalicious: false, hintAr: "مزامنة الوقت عبر NTP — عملية نظام روتينية وطبيعية." },
+      { src: "192.168.5.10", dst: "216.239.35.4",   proto: "NTP",   port: 123, info: "NTP response  ±0.003 s offset  [OK]",                        isMalicious: false, hintAr: "استجابة مزامنة الوقت — طبيعية." },
+      { src: "192.168.5.20", dst: "13.107.4.50",    proto: "HTTPS", port: 443, info: "TLS 1.3  Windows Update check  →  windowsupdate.microsoft.com", isMalicious: false, hintAr: "فحص تحديثات Windows عبر HTTPS — نشاط نظام روتيني." },
+      { src: "192.168.5.30", dst: "8.8.8.8",        proto: "DNS",   port: 53,  info: "Standard query A  dl.delivery.mp.microsoft.com",              isMalicious: false, hintAr: "طلب DNS لخادم توزيع Microsoft — جزء من تحديث النظام." },
+      { src: "192.168.5.20", dst: "13.107.4.52",    proto: "HTTPS", port: 443, info: "TLS 1.3  GET /v10/update  →  dl.delivery.mp.microsoft.com",  isMalicious: false, hintAr: "تنزيل تحديث Windows عبر HTTPS المشفر — آمن ومتوقع." },
+      { src: "192.168.5.45", dst: "142.250.74.78",  proto: "HTTPS", port: 443, info: "TLS 1.3  Application Data  →  calendar.google.com",          isMalicious: false, hintAr: "مزامنة تقويم Google عبر HTTPS — نشاط مكتبي طبيعي." },
+      { src: "192.168.5.60", dst: "52.96.184.64",   proto: "HTTPS", port: 443, info: "TLS 1.3  CONNECT keep-alive  →  smtp.office365.com",         isMalicious: false, hintAr: "اتصال بريد Microsoft 365 المشفر — طبيعي تماماً." },
+    ],
+  },
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
@@ -124,10 +168,12 @@ function buildLogs(def: RoundDef): LogEntry[] {
 // ─── Protocol badge ──────────────────────────────────────────────────────────────
 const PROTO_COLOR: Record<string, string> = {
   HTTPS: "text-emerald-300 bg-emerald-400/10 border-emerald-500/30",
-  DNS:   "text-sky-300    bg-sky-400/10    border-sky-500/30",
-  SSH:   "text-violet-300 bg-violet-400/10 border-violet-500/30",
-  FTP:   "text-amber-300  bg-amber-400/10  border-amber-500/30",
-  TCP:   "text-rose-300   bg-rose-400/10   border-rose-500/30",
+  HTTP:  "text-orange-300  bg-orange-400/10  border-orange-500/30",
+  DNS:   "text-sky-300     bg-sky-400/10     border-sky-500/30",
+  SSH:   "text-violet-300  bg-violet-400/10  border-violet-500/30",
+  FTP:   "text-amber-300   bg-amber-400/10   border-amber-500/30",
+  TCP:   "text-rose-300    bg-rose-400/10    border-rose-500/30",
+  NTP:   "text-slate-300   bg-slate-400/10   border-slate-500/30",
 };
 function ProtoBadge({ proto }: { proto: string }) {
   const cls = PROTO_COLOR[proto] ?? "text-slate-300 bg-slate-400/10 border-slate-500/30";
@@ -213,13 +259,16 @@ export default function TrafficAnalyzer() {
         </div>
         <h2 className="text-2xl font-black text-foreground mb-2">محلل حركة الشبكة</h2>
         <p className="text-muted-foreground text-sm leading-relaxed max-w-md mx-auto">
-          ستواجه ٣ جولات من سجلات الشبكة. في كل جولة يختبئ هجوم واحد بين اتصالات طبيعية — اكتشفه قبل أن يضرب.
+          ستواجه ٥ جولات من سجلات الشبكة الحقيقية. في كل جولة يختبئ هجوم واحد بين اتصالات طبيعية — اكتشفه قبل أن يضرب.
         </p>
       </div>
       <div className="w-full max-w-md grid gap-2 text-start">
-        {["🔴  الجولة ١ — هجوم Brute Force على SSH",
+        {[
+          "🔴  الجولة ١ — هجوم Brute Force على SSH",
           "🟠  الجولة ٢ — كلمة مرور Cleartext عبر FTP",
           "🔵  الجولة ٣ — مسح المنافذ (Port Scan)",
+          "🟣  الجولة ٤ — حقن قواعد البيانات (SQL Injection)",
+          "⚫  الجولة ٥ — اتصال مشبوه بجهاز تحكم (C2 Callback)",
         ].map((item, i) => (
           <div key={i} className="px-4 py-2.5 bg-card border border-border rounded-xl text-sm font-medium text-foreground">{item}</div>
         ))}
