@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { RapidFireLab } from "@/components/RapidFireLab";
 import {
   ShieldCheck, ShieldX, AlertTriangle, Lock, LockOpen,
   Mail, MousePointerClick, RefreshCw, Trophy, ChevronRight,
   Eye, Flag, ExternalLink, CheckCircle, XCircle, Info, Skull,
-  Download,
+  Download, Zap,
 } from "lucide-react";
 
 // ─────────────── Types ───────────────
@@ -900,7 +901,10 @@ export default function Training() {
     setState({ step: "intro", inboxChoice: null, foundErrors: new Set(), popupChoice: null, hoverBtn: false });
   };
 
-  // Step indicator (5 steps)
+  // ── Tab state ──
+  const [activeTab, setActiveTab] = useState<"social" | "rapid">("social");
+
+  // Step indicator (5 steps) — social engineering tab
   const steps = [
     { key: "intro",         labelAr: "مقدمة",      labelEn: "Intro"    },
     { key: "inbox",         labelAr: "البريد",      labelEn: "Email"    },
@@ -915,49 +919,82 @@ export default function Training() {
       <Header />
 
       <main className="flex-1">
-        {/* Page title */}
+        {/* Page header + tabs */}
         <div className="border-b border-border py-6 px-4">
           <div className="container mx-auto max-w-2xl">
             <h1 className="text-xl font-black text-foreground flex items-center gap-2 mb-1">
               <ShieldCheck className="h-5 w-5 text-primary" />
-              {isRtl ? "تدريب ومحاكاة — الهندسة الاجتماعية" : "Training & Simulation — Social Engineering"}
+              {isRtl ? "تدريب ومحاكاة" : "Training & Simulation"}
             </h1>
-            <p className="text-muted-foreground text-sm">
-              {isRtl ? "اختبر مهاراتك في اكتشاف هجمات التصيد الاحتيالي" : "Test your ability to detect phishing attacks"}
+            <p className="text-muted-foreground text-sm mb-5">
+              {isRtl ? "اختبر مهاراتك في اكتشاف التهديدات السيبرانية" : "Test your ability to detect cyber threats"}
             </p>
 
-            {/* Progress steps */}
-            <div className="flex items-center gap-0 mt-5">
-              {steps.map((s, i) => (
-                <div key={s.key} className="flex items-center flex-1">
-                  <div className={`flex flex-col items-center gap-1 flex-1 ${i === 0 ? (isRtl ? "items-end" : "items-start") : i === steps.length - 1 ? (isRtl ? "items-start" : "items-end") : "items-center"}`}>
-                    <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors ${
-                      i < stepIdx ? "bg-primary border-primary text-primary-foreground"
-                      : i === stepIdx ? "border-primary text-primary bg-primary/10"
-                      : "border-border text-muted-foreground"
-                    }`}>
-                      {i < stepIdx ? <CheckCircle className="h-4 w-4" /> : i + 1}
-                    </div>
-                    <span className={`text-xs hidden sm:block ${i === stepIdx ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
-                      {isRtl ? s.labelAr : s.labelEn}
-                    </span>
-                  </div>
-                  {i < steps.length - 1 && (
-                    <div className={`h-0.5 flex-1 max-w-[60px] mx-1 transition-colors ${i < stepIdx ? "bg-primary" : "bg-border"}`} />
-                  )}
-                </div>
-              ))}
+            {/* ── Module tabs ── */}
+            <div className="flex gap-2 p-1 bg-muted/40 border border-border rounded-xl w-fit">
+              <button
+                onClick={() => setActiveTab("social")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  activeTab === "social"
+                    ? "bg-card border border-border shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Mail className="h-4 w-4" />
+                {isRtl ? "محاكي الهندسة الاجتماعية" : "Social Engineering Sim"}
+              </button>
+              <button
+                onClick={() => setActiveTab("rapid")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  activeTab === "rapid"
+                    ? "bg-card border border-border shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Zap className="h-4 w-4" />
+                {isRtl ? "مختبر القرارات السريعة" : "Rapid-Fire Lab"}
+              </button>
             </div>
+
+            {/* Progress steps — only for social tab */}
+            {activeTab === "social" && (
+              <div className="flex items-center gap-0 mt-5">
+                {steps.map((s, i) => (
+                  <div key={s.key} className="flex items-center flex-1">
+                    <div className={`flex flex-col items-center gap-1 flex-1 ${i === 0 ? (isRtl ? "items-end" : "items-start") : i === steps.length - 1 ? (isRtl ? "items-start" : "items-end") : "items-center"}`}>
+                      <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors ${
+                        i < stepIdx ? "bg-primary border-primary text-primary-foreground"
+                        : i === stepIdx ? "border-primary text-primary bg-primary/10"
+                        : "border-border text-muted-foreground"
+                      }`}>
+                        {i < stepIdx ? <CheckCircle className="h-4 w-4" /> : i + 1}
+                      </div>
+                      <span className={`text-xs hidden sm:block ${i === stepIdx ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
+                        {isRtl ? s.labelAr : s.labelEn}
+                      </span>
+                    </div>
+                    {i < steps.length - 1 && (
+                      <div className={`h-0.5 flex-1 max-w-[60px] mx-1 transition-colors ${i < stepIdx ? "bg-primary" : "bg-border"}`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Active screen */}
+        {/* Active module */}
         <div className="container mx-auto max-w-2xl">
-          {state.step === "intro"         && <IntroScreen        isRtl={isRtl} onStart={() => setState((s) => ({ ...s, step: "inbox" }))} />}
-          {state.step === "inbox"         && <InboxScreen        isRtl={isRtl} onChoose={handleInboxChoice} />}
-          {state.step === "phishing"      && <PhishingScreen     isRtl={isRtl} onDone={handlePhishingDone} />}
-          {state.step === "malware-popup" && <MalwarePopupScreen isRtl={isRtl} onChoose={handlePopupChoice} />}
-          {state.step === "result"        && <ResultScreen       isRtl={isRtl} state={state} onRestart={handleRestart} />}
+          {activeTab === "social" && (
+            <>
+              {state.step === "intro"         && <IntroScreen        isRtl={isRtl} onStart={() => setState((s) => ({ ...s, step: "inbox" }))} />}
+              {state.step === "inbox"         && <InboxScreen        isRtl={isRtl} onChoose={handleInboxChoice} />}
+              {state.step === "phishing"      && <PhishingScreen     isRtl={isRtl} onDone={handlePhishingDone} />}
+              {state.step === "malware-popup" && <MalwarePopupScreen isRtl={isRtl} onChoose={handlePopupChoice} />}
+              {state.step === "result"        && <ResultScreen       isRtl={isRtl} state={state} onRestart={handleRestart} />}
+            </>
+          )}
+          {activeTab === "rapid" && <RapidFireLab isRtl={isRtl} />}
         </div>
       </main>
 
