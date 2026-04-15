@@ -304,11 +304,15 @@ export default function TrafficAnalyzer() {
   }
 
   // ── PLAYING ───────────────────────────────────────────────────────────────────
-  return (
-    <div className="flex flex-col gap-4" dir="rtl">
+  // Grid columns fixed to fit max-w-2xl container (≈648px usable)
+  // 88 + 108 + 108 + 54 + 36 + 1fr = 394px fixed → info gets ~254px
+  const COLS = "88px 108px 108px 54px 36px 1fr";
 
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+  return (
+    <div className="flex flex-col gap-4">
+
+      {/* Arabic header — RTL isolated */}
+      <div className="flex items-center justify-between flex-wrap gap-3" dir="rtl">
         <div>
           <p className="text-xs text-muted-foreground font-mono uppercase tracking-widest mb-0.5">محلل حركة الشبكة</p>
           <h3 className="font-black text-foreground text-base">{round.titleAr}</h3>
@@ -316,24 +320,23 @@ export default function TrafficAnalyzer() {
         <RoundDots total={total} done={roundIdx} correct={correct} />
       </div>
 
-      {/* Terminal window */}
-      <div className="rounded-xl border border-slate-700/60 overflow-hidden shadow-xl overflow-x-auto">
+      {/* Terminal window — forced LTR as a self-contained block */}
+      <div className="rounded-xl border border-slate-700/60 overflow-hidden shadow-xl w-full" dir="ltr">
 
         {/* Title bar */}
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1a2e] border-b border-slate-700/60 min-w-max">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1a2e] border-b border-slate-700/60 w-full">
           <div className="w-3 h-3 rounded-full bg-rose-500/80 shrink-0" />
           <div className="w-3 h-3 rounded-full bg-amber-500/80 shrink-0" />
           <div className="w-3 h-3 rounded-full bg-emerald-500/80 shrink-0" />
-          <span className="mx-auto text-xs text-slate-500 font-mono px-4">
+          <span className="mx-auto text-xs text-slate-500 font-mono">
             wireshark-sim — live capture — {logs.length} packets
           </span>
         </div>
 
-        {/* Column headers — LTR always (technical data) */}
+        {/* Column headers */}
         <div
-          dir="ltr"
-          className="grid font-mono text-xs text-slate-500 px-3 py-1.5 border-b border-slate-700/40 bg-[#0f0f1a] min-w-max"
-          style={{ gridTemplateColumns: "110px 140px 140px 62px 48px 1fr" }}
+          className="grid w-full font-mono text-xs text-slate-500 px-3 py-1.5 border-b border-slate-700/40 bg-[#0f0f1a] text-left"
+          style={{ gridTemplateColumns: COLS }}
         >
           <span>Time</span>
           <span>Source</span>
@@ -344,7 +347,7 @@ export default function TrafficAnalyzer() {
         </div>
 
         {/* Log rows */}
-        <div className="bg-[#0d0d1a] divide-y divide-slate-800/40 min-w-max">
+        <div className="bg-[#0d0d1a] divide-y divide-slate-800/40 w-full">
           {logs.map((log, idx) => {
             const isSelected  = selected === log.id;
             const revealRight = log.isMalicious && verdict !== "idle";
@@ -359,22 +362,21 @@ export default function TrafficAnalyzer() {
             return (
               <div
                 key={log.id}
-                dir="ltr"
                 onClick={() => handleClick(log)}
-                className={`grid items-center px-3 py-2 font-mono text-sm gap-3 select-none transition-colors ${rowBg} ${
+                className={`grid w-full items-center px-3 py-2 font-mono text-xs select-none transition-colors text-left ${rowBg} ${
                   verdict === "idle" ? "cursor-pointer hover:bg-slate-700/25" : "cursor-default"
                 }`}
-                style={{ gridTemplateColumns: "110px 140px 140px 62px 48px 1fr" }}
+                style={{ gridTemplateColumns: COLS }}
               >
-                <span className="text-slate-500 text-xs">{log.time}</span>
+                <span className="text-slate-500">{log.time}</span>
                 <span className="text-sky-400 truncate">{log.src}</span>
                 <span className="text-violet-400 truncate">{log.dst}</span>
                 <ProtoBadge proto={log.proto} />
-                <span className="text-slate-400 text-xs">{log.port}</span>
-                <span className={`truncate ${
-                  revealRight            ? "text-emerald-300 font-semibold"
+                <span className="text-slate-400">{log.port}</span>
+                <span className={`truncate text-[13px] ${
+                  revealRight                         ? "text-emerald-300 font-semibold"
                   : isSelected && verdict === "wrong" ? "text-rose-300"
-                  :                        "text-slate-200"
+                  :                                     "text-slate-200"
                 }`}>
                   {log.info}
                 </span>
@@ -384,17 +386,17 @@ export default function TrafficAnalyzer() {
         </div>
       </div>
 
-      {/* Instruction */}
+      {/* Arabic instruction/verdict — RTL isolated */}
       {verdict === "idle" && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground px-1" dir="rtl">
           <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
           <span>⚠️ انقر على السطر الذي تعتقد أنه يمثل هجوماً شبكياً.</span>
         </div>
       )}
 
-      {/* Correct verdict */}
+      {/* Correct verdict — RTL isolated */}
       {verdict === "correct" && (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 flex flex-col gap-3">
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 flex flex-col gap-3" dir="rtl">
           <div className="flex items-start gap-3">
             <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
             <div>
@@ -404,17 +406,17 @@ export default function TrafficAnalyzer() {
           </div>
           <button
             onClick={handleNext}
-            className="self-end flex items-center gap-2 px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-lg transition-colors text-sm"
+            className="self-start flex items-center gap-2 px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-lg transition-colors text-sm"
           >
+            <ChevronRight className="h-4 w-4" />
             {isLast ? "عرض النتيجة" : "الجولة التالية"}
-            <ChevronRight className="h-4 w-4 rotate-180" />
           </button>
         </div>
       )}
 
-      {/* Wrong verdict */}
+      {/* Wrong verdict — RTL isolated */}
       {verdict === "wrong" && (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 flex flex-col gap-3">
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 flex flex-col gap-3" dir="rtl">
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-rose-400 shrink-0 mt-0.5" />
             <div>
@@ -424,7 +426,7 @@ export default function TrafficAnalyzer() {
           </div>
           <button
             onClick={() => { setVerdict("idle"); setSelected(null); setWrongHint(""); }}
-            className="self-end flex items-center gap-2 px-5 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold rounded-lg border border-rose-500/30 transition-colors text-sm"
+            className="self-start flex items-center gap-2 px-5 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold rounded-lg border border-rose-500/30 transition-colors text-sm"
           >
             <RotateCcw className="h-4 w-4" />
             حاول مجدداً
