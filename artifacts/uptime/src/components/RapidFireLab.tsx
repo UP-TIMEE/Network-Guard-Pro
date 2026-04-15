@@ -17,48 +17,94 @@ interface Scenario {
   explanation: string;
 }
 
-const securityScenarios: Scenario[] = [
+const ALL_SCENARIOS: Scenario[] = [
   {
     id: 1,
-    content: "http://paypal.com.secure-verify.net/login",
+    content: "https://sso.stc.com.sa",
     type: "url",
-    isMalicious: true,
-    explanation:
-      "النطاق الحقيقي هو paypal.com، لكن هنا يُستخدَم كنطاق فرعي داخل secure-verify.net الخبيث. الموقع الشرعي ينتهي دائماً بـ paypal.com مباشرةً.",
+    isMalicious: false,
+    explanation: "هذا هو رابط تسجيل الدخول الموحد الرسمي لشركة STC.",
   },
   {
     id: 2,
-    content: "https://www.stc.com.sa/portal/myaccount",
-    type: "url",
-    isMalicious: false,
-    explanation: "",
-  },
-  {
-    id: 3,
-    content:
-      "من: البنك الأهلي\nتنبيه: رُصد نشاط مشبوه في حسابك. تحقق فوراً:\nahli-bank-secure.link/auth?token=91827",
+    content: "تم إيقاف حسابك البنكي، يرجى تحديث البيانات عبر الرابط:\nalrajhi-portal.me",
     type: "sms",
     isMalicious: true,
     explanation:
-      "الرابط ahli-bank-secure.link ليس النطاق الرسمي (alahli.com). البنوك لا ترسل روابط اتخاذ إجراء عاجل عبر SMS — اتصل دائماً بالرقم الرسمي على بطاقتك.",
+      "البنوك لا تطلب تحديث البيانات عبر روابط في رسائل نصية، والنطاق .me مشبوه وليس النطاق الرسمي للراجحي (alrajhibank.com.sa).",
+  },
+  {
+    id: 3,
+    content: "https://iam.gov.sa",
+    type: "url",
+    isMalicious: false,
+    explanation: "هذا هو الرابط الرسمي لبوابة نفاذ (النفاذ الوطني الموحد).",
   },
   {
     id: 4,
-    content: "no-reply@google.com",
-    type: "email",
-    isMalicious: false,
-    explanation: "",
+    content: "https://portal.rnicrosoft.com",
+    type: "url",
+    isMalicious: true,
+    explanation:
+      "لاحظ دمج حرفَي r و n ليبدوا كحرف m — هجوم Homoglyph كلاسيكي. الموقع الحقيقي هو microsoft.com.",
   },
   {
     id: 5,
-    content:
-      "مرحباً، أنا من برنامج حساب المواطن. أرسل رقم هويتك ورمز OTP لتأكيد أهليتك للحصول على دعم بقيمة ريال 2,000.",
-    type: "message",
+    content: "شحنتك من سمسا جاهزة، ادفع رسوم التوصيل (15 ريال) هنا:\nsmsa-pay.top",
+    type: "sms",
     isMalicious: true,
     explanation:
-      "لا توجد جهة حكومية تطلب رقم الهوية أو رمز OTP عبر رسائل خاصة. رمز OTP سري تماماً ولا يُشارَك مع أي شخص تحت أي ذريعة.",
+      "شركات الشحن لا تستخدم نطاقات مثل .top لتحصيل المدفوعات. هذا رابط تصيد لسرقة بيانات البطاقات البنكية.",
+  },
+  {
+    id: 6,
+    content: "https://www.apple.com/sa-ar/",
+    type: "url",
+    isMalicious: false,
+    explanation: "الرابط الرسمي لشركة أبل في السعودية.",
+  },
+  {
+    id: 7,
+    content: "وصلتك مكافأة أداء من UPTIME.\nاضغط هنا للتحميل: uptime-bonus.exe",
+    type: "email",
+    isMalicious: true,
+    explanation:
+      "الملفات التي تنتهي بـ .exe هي برامج تنفيذية قد تحتوي على فيروسات أو برمجيات خبيثة. لا تحمّلها أبداً من رسائل غير متوقعة.",
+  },
+  {
+    id: 8,
+    content: "http://192.168.1.1.secure-login.com",
+    type: "url",
+    isMalicious: true,
+    explanation:
+      "المهاجم وضع عنوان IP في بداية الرابط للتمويه. النطاق الحقيقي الذي سيُزار هو secure-login.com وهو مشبوه.",
+  },
+  {
+    id: 9,
+    content: "https://twitter.com/MOISaudiArabia",
+    type: "url",
+    isMalicious: false,
+    explanation: "الحساب الرسمي لوزارة الداخلية السعودية على منصة X (تويتر).",
+  },
+  {
+    id: 10,
+    content: "تحديث أمني عاجل لويندوز، اضغط هنا فوراً:\nwindows-security-update.xyz",
+    type: "url",
+    isMalicious: true,
+    explanation:
+      "تحديثات ويندوز تتم دائماً من إعدادات النظام أو Windows Update. لا تثق بأي رابط خارجي بنطاق .xyz يدّعي توفير تحديث أمني.",
   },
 ];
+
+/** Fisher-Yates in-place shuffle — returns a new shuffled copy */
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 const TIMER_SECONDS = 10;
 
@@ -120,9 +166,11 @@ export function RapidFireLab({ isRtl }: { isRtl: boolean }) {
   const [timeLeft,   setTimeLeft]   = useState(TIMER_SECONDS);
   const [verdict,    setVerdict]    = useState<Verdict>("idle");
   const [timerActive, setTimerActive] = useState(false);
+  // Shuffled deck for the current round — re-shuffled every time the game starts
+  const [scenarios,  setScenarios]  = useState<Scenario[]>(() => shuffle(ALL_SCENARIOS));
 
-  const scenario = securityScenarios[cardIdx];
-  const total    = securityScenarios.length;
+  const scenario = scenarios[cardIdx];
+  const total    = scenarios.length;
 
   // ── Timer countdown ──
   useEffect(() => {
@@ -145,6 +193,7 @@ export function RapidFireLab({ isRtl }: { isRtl: boolean }) {
   }, []);
 
   const startGame = () => {
+    setScenarios(shuffle(ALL_SCENARIOS));
     setCorrect(0);
     setPhase("playing");
     startCard(0);
@@ -194,8 +243,8 @@ export function RapidFireLab({ isRtl }: { isRtl: boolean }) {
           </h2>
           <p className="text-muted-foreground leading-relaxed">
             {isRtl
-              ? "ستُعرض عليك 5 بطاقات — روابط، رسائل وعناوين بريد. لديك 10 ثوانٍ لكل قرار: هل هو آمن أم خبيث؟"
-              : "You'll see 5 cards — URLs, messages and emails. You have 10 seconds per card: Safe or Malicious?"}
+              ? "ستُعرض عليك 10 بطاقات — روابط، رسائل وعناوين بريد بترتيب عشوائي. لديك 10 ثوانٍ لكل قرار: هل هو آمن أم خبيث؟"
+              : "You'll see 10 cards — URLs, messages and emails in random order. You have 10 seconds per card: Safe or Malicious?"}
           </p>
         </div>
 
@@ -245,12 +294,12 @@ export function RapidFireLab({ isRtl }: { isRtl: boolean }) {
 
         <ScoreBadge correct={correct} total={total} isRtl={isRtl} />
 
-        {/* Progress dots */}
-        <div className="flex items-center gap-2">
-          {securityScenarios.map((_, i) => (
+        {/* Progress dots — one per scenario */}
+        <div className="flex items-center gap-1.5 flex-wrap justify-center">
+          {scenarios.map((_, i) => (
             <div
               key={i}
-              className="w-3 h-3 rounded-full border"
+              className="w-2.5 h-2.5 rounded-full border"
               style={{
                 backgroundColor: i < correct ? "rgb(34 197 94 / 0.4)" : "rgb(239 68 68 / 0.4)",
                 borderColor:     i < correct ? "rgb(34 197 94 / 0.6)" : "rgb(239 68 68 / 0.6)",
@@ -313,10 +362,10 @@ export function RapidFireLab({ isRtl }: { isRtl: boolean }) {
             {typeLabel(scenario.type, isRtl)}
           </span>
           <div className="flex gap-1 ms-auto">
-            {securityScenarios.map((_, i) => (
+            {scenarios.map((_, i) => (
               <div
                 key={i}
-                className={`h-1.5 w-6 rounded-full transition-colors ${
+                className={`h-1.5 w-4 rounded-full transition-colors ${
                   i < cardIdx ? "bg-primary/60" : i === cardIdx ? "bg-primary" : "bg-muted"
                 }`}
               />
