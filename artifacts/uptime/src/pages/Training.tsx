@@ -995,24 +995,26 @@ export default function Training() {
           </div>
         </div>
 
-        {/* Active module */}
-        <div className="container mx-auto max-w-2xl">
-          {activeTab === "social" && (
-            <>
-              {state.step === "intro"         && <IntroScreen        isRtl={isRtl} onStart={() => setState((s) => ({ ...s, step: "inbox" }))} />}
-              {state.step === "inbox"         && <InboxScreen        isRtl={isRtl} onChoose={handleInboxChoice} />}
-              {state.step === "phishing"      && <PhishingScreen     isRtl={isRtl} onDone={handlePhishingDone} />}
-              {state.step === "malware-popup" && <MalwarePopupScreen isRtl={isRtl} onChoose={handlePopupChoice} />}
-              {state.step === "result"        && <ResultScreen       isRtl={isRtl} state={state} onRestart={handleRestart} />}
-            </>
-          )}
-          {activeTab === "rapid" && <RapidFireLab isRtl={isRtl} />}
-          {activeTab === "traffic" && (
-            <div className="py-8 px-4">
-              <TrafficAnalyzer />
-            </div>
-          )}
-        </div>
+        {/* Active module — social & rapid share narrow container; traffic gets wider one */}
+        {(activeTab === "social" || activeTab === "rapid") && (
+          <div className="container mx-auto max-w-2xl">
+            {activeTab === "social" && (
+              <>
+                {state.step === "intro"         && <IntroScreen        isRtl={isRtl} onStart={() => setState((s) => ({ ...s, step: "inbox" }))} />}
+                {state.step === "inbox"         && <InboxScreen        isRtl={isRtl} onChoose={handleInboxChoice} />}
+                {state.step === "phishing"      && <PhishingScreen     isRtl={isRtl} onDone={handlePhishingDone} />}
+                {state.step === "malware-popup" && <MalwarePopupScreen isRtl={isRtl} onChoose={handlePopupChoice} />}
+                {state.step === "result"        && <ResultScreen       isRtl={isRtl} state={state} onRestart={handleRestart} />}
+              </>
+            )}
+            {activeTab === "rapid" && <RapidFireLab isRtl={isRtl} />}
+          </div>
+        )}
+        {activeTab === "traffic" && (
+          <div className="container mx-auto max-w-5xl px-4 py-8">
+            <TrafficAnalyzer />
+          </div>
+        )}
       </main>
 
       <Footer />

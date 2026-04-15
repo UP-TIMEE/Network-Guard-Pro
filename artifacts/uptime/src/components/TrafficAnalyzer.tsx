@@ -281,10 +281,9 @@ export default function TrafficAnalyzer() {
       </div>
 
       {/* ── Terminal — hard LTR, table-based ── */}
-      <div
-        dir="ltr"
-        className="rounded-xl border border-slate-700/50 overflow-hidden bg-[#0d0d1a] shadow-xl"
-      >
+      {/* Outer wrapper: clips the border-radius; inner wrapper scrolls on mobile */}
+      <div dir="ltr" className="rounded-xl border border-slate-700/50 overflow-hidden bg-[#0d0d1a] shadow-xl">
+
         {/* macOS-style title bar */}
         <div className="flex items-center gap-1.5 px-4 py-2.5 bg-[#141428] border-b border-slate-700/50">
           <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
@@ -295,66 +294,66 @@ export default function TrafficAnalyzer() {
           </span>
         </div>
 
-        {/* Table — fixed layout guarantees header↔data alignment */}
-        <table className="w-full table-fixed border-collapse font-mono">
-          <colgroup>
-            <col style={{ width: "14%" }} />  {/* Time      */}
-            <col style={{ width: "17%" }} />  {/* Source    */}
-            <col style={{ width: "17%" }} />  {/* Dest      */}
-            <col style={{ width: "9%"  }} />  {/* Proto     */}
-            <col style={{ width: "7%"  }} />  {/* Port      */}
-            <col style={{ width: "36%" }} />  {/* Info      */}
-          </colgroup>
+        {/* Scrollable table wrapper — scrolls on mobile, full-width on desktop */}
+        <div className="overflow-x-auto">
+          {/*
+            No table-fixed: browser auto-sizes columns to content.
+            min-w ensures the table never collapses on tiny screens.
+            whitespace-nowrap on fixed columns keeps IPs/times intact.
+          */}
+          <table className="w-full min-w-[720px] border-collapse font-mono">
+            {/* Header */}
+            <thead>
+              <tr className="bg-[#111122] border-b border-slate-700/50 text-left text-[11px] text-slate-500 uppercase tracking-wider">
+                <th className="px-3 py-2 font-semibold whitespace-nowrap">Time</th>
+                <th className="px-3 py-2 font-semibold whitespace-nowrap">Source</th>
+                <th className="px-3 py-2 font-semibold whitespace-nowrap">Destination</th>
+                <th className="px-3 py-2 font-semibold whitespace-nowrap">Proto</th>
+                <th className="px-3 py-2 font-semibold whitespace-nowrap">Port</th>
+                <th className="px-3 py-2 font-semibold w-full">Info</th>
+              </tr>
+            </thead>
 
-          {/* Header */}
-          <thead>
-            <tr className="bg-[#111122] border-b border-slate-700/50 text-left text-[11px] text-slate-500 uppercase tracking-wider">
-              <th className="px-3 py-2 font-semibold">Time</th>
-              <th className="px-3 py-2 font-semibold">Source</th>
-              <th className="px-3 py-2 font-semibold">Destination</th>
-              <th className="px-3 py-2 font-semibold">Proto</th>
-              <th className="px-3 py-2 font-semibold">Port</th>
-              <th className="px-3 py-2 font-semibold">Info</th>
-            </tr>
-          </thead>
+            {/* Body */}
+            <tbody className="divide-y divide-slate-800/50">
+              {logs.map((log, idx) => {
+                const sel        = selected === log.id;
+                const isRevealed = log.isMalicious && verdict !== "idle";
 
-          {/* Body */}
-          <tbody className="divide-y divide-slate-800/50">
-            {logs.map((log, idx) => {
-              const sel        = selected === log.id;
-              const isRevealed = log.isMalicious && verdict !== "idle";
+                const rowCls =
+                  sel && verdict === "correct" ? "bg-emerald-500/10 border-l-2 border-l-emerald-400" :
+                  sel && verdict === "wrong"   ? "bg-rose-500/10    border-l-2 border-l-rose-400"    :
+                  isRevealed                   ? "bg-emerald-500/5"  :
+                  idx % 2 === 0               ? "bg-[#0f0f1e]"      :
+                                                "bg-[#0d0d1a]";
 
-              const rowCls =
-                sel && verdict === "correct" ? "bg-emerald-500/10 border-l-2 border-l-emerald-400" :
-                sel && verdict === "wrong"   ? "bg-rose-500/10    border-l-2 border-l-rose-400"    :
-                isRevealed                   ? "bg-emerald-500/5"  :
-                idx % 2 === 0               ? "bg-[#0f0f1e]"      :
-                                              "bg-[#0d0d1a]";
-
-              const infoCls =
-                isRevealed                   ? "text-emerald-300 font-semibold" :
-                sel && verdict === "wrong"   ? "text-rose-300"                  :
+                const infoCls =
+                  isRevealed                 ? "text-emerald-300 font-semibold" :
+                  sel && verdict === "wrong" ? "text-rose-300"                  :
                                               "text-slate-200";
 
-              return (
-                <tr
-                  key={log.id}
-                  onClick={() => handleRowClick(log)}
-                  className={`text-sm text-left transition-colors select-none ${rowCls} ${
-                    verdict === "idle" ? "cursor-pointer hover:brightness-125" : "cursor-default"
-                  }`}
-                >
-                  <td className="px-3 py-2.5 text-slate-500 text-xs whitespace-nowrap">{log.time}</td>
-                  <td className="px-3 py-2.5 text-sky-400    truncate">{log.src}</td>
-                  <td className="px-3 py-2.5 text-violet-400 truncate">{log.dst}</td>
-                  <td className="px-3 py-2.5"><ProtoBadge proto={log.proto} /></td>
-                  <td className="px-3 py-2.5 text-slate-400 text-xs">{log.port}</td>
-                  <td className={`px-3 py-2.5 truncate ${infoCls}`}>{log.info}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                return (
+                  <tr
+                    key={log.id}
+                    onClick={() => handleRowClick(log)}
+                    className={`text-sm text-left transition-colors select-none ${rowCls} ${
+                      verdict === "idle" ? "cursor-pointer hover:brightness-125" : "cursor-default"
+                    }`}
+                  >
+                    {/* Fixed columns — whitespace-nowrap guarantees no wrapping */}
+                    <td className="px-3 py-2.5 text-slate-500 text-xs whitespace-nowrap">{log.time}</td>
+                    <td className="px-3 py-2.5 text-sky-400    whitespace-nowrap">{log.src}</td>
+                    <td className="px-3 py-2.5 text-violet-400 whitespace-nowrap">{log.dst}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap"><ProtoBadge proto={log.proto} /></td>
+                    <td className="px-3 py-2.5 text-slate-400 text-xs whitespace-nowrap">{log.port}</td>
+                    {/* Info — expands to fill remaining space, wraps naturally */}
+                    <td className={`px-3 py-2.5 break-words ${infoCls}`}>{log.info}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* ── Instruction — RTL ── */}
