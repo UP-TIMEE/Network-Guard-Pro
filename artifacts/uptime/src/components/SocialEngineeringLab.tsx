@@ -140,7 +140,7 @@ function EmailSim({ onHotspot }: { onHotspot: (pts: Pts, fb: string) => void }) 
               <Trash2 className="h-3 w-3"/> حذف
             </Hotspot>
             <Hotspot onClick={() => onHotspot(20, "مثالي! أنت تحمي نفسك وشبكة الشركة بأكملها. فريق الأمن يتمكن من حظر المهاجم فوراً ويحذر بقية الموظفين.")}
-              className="flex items-center gap-1 px-2 py-1 text-[10px] bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-md">
+              className="flex items-center gap-1 px-2 py-1 text-[10px] bg-muted/60 border border-border text-muted-foreground rounded-md">
               <Flag className="h-3 w-3"/> إبلاغ عن تصيد
             </Hotspot>
           </div>
@@ -182,43 +182,49 @@ function SmsSim({ onHotspot }: { onHotspot: (pts: Pts, fb: string) => void }) {
   const now = new Date().toLocaleTimeString("ar-SA", {hour:"2-digit", minute:"2-digit"});
   return (
     <div className="flex justify-center py-2">
-      <div className="w-60 rounded-[2.2rem] border-[5px] border-foreground/15 bg-[#111] overflow-hidden shadow-2xl shadow-black/60">
-        <div className="flex items-center justify-between px-5 py-1.5 bg-[#111]">
-          <span className="text-white text-[10px] font-bold">{now}</span>
-          <div className="flex items-center gap-1"><Signal className="h-3 w-3 text-white"/><Wifi className="h-3 w-3 text-white"/><Battery className="h-3.5 w-3.5 text-white"/></div>
+      <div className="w-80 rounded-[2.8rem] border-[6px] border-foreground/15 bg-[#111] overflow-hidden shadow-2xl shadow-black/60">
+        {/* Status bar */}
+        <div className="flex items-center justify-between px-6 py-2 bg-[#111]">
+          <span className="text-white text-xs font-bold">{now}</span>
+          <div className="flex items-center gap-1.5"><Signal className="h-3.5 w-3.5 text-white"/><Wifi className="h-3.5 w-3.5 text-white"/><Battery className="h-4 w-4 text-white"/></div>
         </div>
-        <div className="flex items-center gap-2 px-3 py-2 bg-[#1c1c1e] border-b border-white/10">
-          <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center"><MessageSquare className="h-3 w-3 text-white"/></div>
-          <div><p className="text-white text-[11px] font-bold">ARAMEX-SA</p><p className="text-white/40 text-[9px]">رسائل نصية</p></div>
+        {/* Sender header */}
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-[#1c1c1e] border-b border-white/10">
+          <div className="w-9 h-9 rounded-full bg-[#3a3a3c] flex items-center justify-center"><MessageSquare className="h-4 w-4 text-white/70"/></div>
+          <div>
+            <p className="text-white text-sm font-bold">ARAMEX-SA</p>
+            <p className="text-white/40 text-xs">رسائل نصية</p>
+          </div>
         </div>
-        <div className="bg-[#111] px-3 py-3 min-h-[220px] flex flex-col gap-2.5">
+        {/* Messages */}
+        <div className="bg-[#111] px-4 py-4 min-h-[240px] flex flex-col gap-3">
           <div className="flex flex-col items-end gap-0.5">
-            <div className="max-w-[90%] bg-[#2c2c2e] px-3 py-2 rounded-2xl rounded-tr-sm">
-              <p className="text-white text-[11px] leading-relaxed" dir="rtl">طردك موقوف! يرجى دفع رسوم التخليص ١٥ ريال لاستكمال التسليم خلال ٢٤ ساعة.</p>
+            <div className="max-w-[90%] bg-[#2c2c2e] px-4 py-2.5 rounded-2xl rounded-tr-sm">
+              <p className="text-white text-sm leading-relaxed" dir="rtl">طردك موقوف! يرجى دفع رسوم التخليص ١٥ ريال لاستكمال التسليم خلال ٢٤ ساعة.</p>
             </div>
           </div>
           <div className="flex flex-col items-end gap-0.5">
-            <div className="max-w-[90%] bg-[#2c2c2e] px-3 py-2 rounded-2xl rounded-tr-sm">
+            <div className="max-w-[90%] bg-[#2c2c2e] px-4 py-2.5 rounded-2xl rounded-tr-sm">
               <Hotspot onClick={() => onHotspot(0, "تم سرقة بياناتك البنكية! المواقع المنتهية بـ .tk وطلبات الدفع العاجلة عبر SMS علامات تصيد واضحة. أرامكس لا يطلب الدفع عبر روابط SMS.")}
-                className="text-[11px] font-mono text-sky-400 underline" >
+                className="text-sm font-mono text-[#4a9eff] underline">
                 http://aramex-sa-pay.tk/pay?id=88291
               </Hotspot>
             </div>
           </div>
           <div className="flex-1"/>
-          {/* Action bar */}
+          {/* Action buttons — neutral colours */}
           <div className="flex gap-2">
             <Hotspot onClick={() => onHotspot(10, "أنت بأمان، لكن المرسل لا يزال يستهدف أشخاصاً آخرين. الإبلاغ والحظر معاً يوقفان الحملة بشكل كامل.")}
-              className="flex-1 py-1.5 bg-[#2c2c2e] text-white/60 text-[10px] rounded-xl text-center">
+              className="flex-1 py-2 bg-[#3a3a3c] text-white/70 text-xs rounded-xl text-center font-medium">
               تجاهل
             </Hotspot>
             <Hotspot onClick={() => onHotspot(20, "ممتاز! حظر الرقم والإبلاغ عنه يُسهم في وقف هذه الحملة وحماية الآخرين. شبكات الاتصال تستخدم هذه البلاغات لتعليق الأرقام المشبوهة.")}
-              className="flex-1 py-1.5 bg-rose-500/20 border border-rose-500/40 text-rose-400 text-[10px] rounded-xl text-center">
-              🚫 حظر وإبلاغ
+              className="flex-1 py-2 bg-[#3a3a3c] text-white/70 text-xs rounded-xl text-center font-medium">
+              حظر وإبلاغ
             </Hotspot>
           </div>
         </div>
-        <div className="bg-[#111] flex justify-center py-1.5"><div className="w-16 h-1 rounded-full bg-white/20"/></div>
+        <div className="bg-[#111] flex justify-center py-2"><div className="w-20 h-1 rounded-full bg-white/20"/></div>
       </div>
     </div>
   );
@@ -233,46 +239,56 @@ function VishingSim({ onHotspot }: { onHotspot: (pts: Pts, fb: string) => void }
   useEffect(() => { const t = setInterval(() => setPulse(p => !p), 900); return () => clearInterval(t); }, []);
   return (
     <div className="flex justify-center py-2">
-      <div className="w-60 rounded-[2.2rem] border-[5px] border-foreground/15 bg-[#111] overflow-hidden shadow-2xl shadow-black/60">
-        <div className="flex items-center justify-between px-5 py-1.5 bg-[#111]">
-          <span className="text-white text-[10px] font-bold">00:48</span>
-          <div className="flex items-center gap-1"><Signal className="h-3 w-3 text-white"/><Battery className="h-3.5 w-3.5 text-white"/></div>
+      <div className="w-80 rounded-[2.8rem] border-[6px] border-foreground/15 bg-[#111] overflow-hidden shadow-2xl shadow-black/60">
+        {/* Status bar */}
+        <div className="flex items-center justify-between px-6 py-2 bg-[#111]">
+          <span className="text-white text-xs font-bold">00:48</span>
+          <div className="flex items-center gap-1.5"><Signal className="h-3.5 w-3.5 text-white"/><Battery className="h-4 w-4 text-white"/></div>
         </div>
-        <div className="bg-gradient-to-b from-[#1a1a2e] to-[#111] px-5 py-6 flex flex-col items-center gap-3 min-h-[280px]">
+        <div className="bg-gradient-to-b from-[#1c1c2e] to-[#111] px-6 py-6 flex flex-col items-center gap-4 min-h-[310px]">
+          {/* Avatar ring */}
           <div className="relative flex items-center justify-center">
-            <div className={`absolute w-20 h-20 rounded-full border border-amber-400/20 transition-all duration-1000 ${pulse?"scale-110 opacity-50":"scale-100 opacity-20"}`}/>
-            <div className="w-14 h-14 rounded-full bg-[#2c2c2e] border border-amber-500/40 flex items-center justify-center">
-              <Phone className="h-6 w-6 text-amber-400"/>
+            <div className={`absolute w-24 h-24 rounded-full border border-white/10 transition-all duration-1000 ${pulse?"scale-110 opacity-40":"scale-100 opacity-15"}`}/>
+            <div className="w-16 h-16 rounded-full bg-[#2c2c2e] border border-white/20 flex items-center justify-center">
+              <Phone className="h-7 w-7 text-white/70"/>
             </div>
           </div>
+          {/* Caller info */}
           <div className="text-center" dir="rtl">
-            <p className="text-white font-black text-base">رقم مجهول</p>
-            <p className="text-white/50 text-[10px]">مكالمة جارية · 00:48</p>
+            <p className="text-white font-black text-lg">رقم مجهول</p>
+            <p className="text-white/50 text-xs">مكالمة جارية · 00:48</p>
           </div>
-          <div className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5" dir="rtl">
-            <p className="text-white/50 text-[9px] mb-1">المتصل يقول:</p>
-            <p className="text-white text-[11px] leading-relaxed">"فريق الدعم الفني — رصدنا نشاطاً مشبوهاً على حسابك. نحتاج كلمة مرورك <strong className="text-amber-300">للتحقق الفوري</strong> قبل تعطل الحساب!"</p>
+          {/* Script */}
+          <div className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3" dir="rtl">
+            <p className="text-white/50 text-[10px] mb-1">المتصل يقول:</p>
+            <p className="text-white text-sm leading-relaxed">"فريق الدعم الفني — رصدنا نشاطاً مشبوهاً على حسابك. نحتاج كلمة مرورك للتحقق الفوري قبل تعطل الحساب!"</p>
           </div>
-          {/* Action buttons */}
-          <div className="flex gap-3 w-full mt-1">
+          {/* Action buttons — all neutral dark circles like a real call UI */}
+          <div className="flex gap-4 w-full justify-center mt-1">
             <Hotspot onClick={() => onHotspot(0, "كارثي! المهاجم حصل على كلمة مرورك. الدعم التقني الشرعي لا يطلب كلمات المرور أبداً عبر الهاتف تحت أي ظرف كان.")}
-              className="flex-1 flex flex-col items-center gap-1 py-2 bg-amber-500/15 border border-amber-500/30 rounded-2xl">
-              <Mic className="h-5 w-5 text-amber-400"/>
-              <span className="text-amber-300 text-[10px]">أعطِ كلمة المرور</span>
+              className="flex flex-col items-center gap-1.5">
+              <div className="w-14 h-14 rounded-full bg-[#3a3a3c] flex items-center justify-center">
+                <Mic className="h-6 w-6 text-white/80"/>
+              </div>
+              <span className="text-white/60 text-[11px] text-center w-16">أعطِ كلمة المرور</span>
             </Hotspot>
             <Hotspot onClick={() => onHotspot(10, "أنت بأمان، لكن المهاجم لا يزال يتصل بموظفين آخرين. إبلاغ فريق الأمن يوقفه ويُحذّر الجميع.")}
-              className="flex-1 flex flex-col items-center gap-1 py-2 bg-rose-500/15 border border-rose-500/30 rounded-2xl">
-              <PhoneOff className="h-5 w-5 text-rose-400"/>
-              <span className="text-rose-300 text-[10px]">أنهِ المكالمة</span>
+              className="flex flex-col items-center gap-1.5">
+              <div className="w-14 h-14 rounded-full bg-[#e53935] flex items-center justify-center">
+                <PhoneOff className="h-6 w-6 text-white"/>
+              </div>
+              <span className="text-white/60 text-[11px] text-center w-16">إنهاء المكالمة</span>
             </Hotspot>
             <Hotspot onClick={() => onHotspot(20, "مثالي! إنهاء المكالمة وإبلاغ فريق الأمن يوقف المهاجم ويحذر بقية الموظفين. فريق الأمن يتمكن من تحليل الرقم وتعقّبه.")}
-              className="flex-1 flex flex-col items-center gap-1 py-2 bg-emerald-500/15 border border-emerald-500/30 rounded-2xl">
-              <ShieldCheck className="h-5 w-5 text-emerald-400"/>
-              <span className="text-emerald-300 text-[10px]">أنهِ + أبلِغ</span>
+              className="flex flex-col items-center gap-1.5">
+              <div className="w-14 h-14 rounded-full bg-[#3a3a3c] flex items-center justify-center">
+                <ShieldCheck className="h-6 w-6 text-white/80"/>
+              </div>
+              <span className="text-white/60 text-[11px] text-center w-16">إنهِ وأبلِغ الأمن</span>
             </Hotspot>
           </div>
         </div>
-        <div className="bg-[#111] flex justify-center py-1.5"><div className="w-16 h-1 rounded-full bg-white/20"/></div>
+        <div className="bg-[#111] flex justify-center py-2"><div className="w-20 h-1 rounded-full bg-white/20"/></div>
       </div>
     </div>
   );
@@ -318,11 +334,11 @@ function BaitingSim({ onHotspot }: { onHotspot: (pts: Pts, fb: string) => void }
               </div>
               <div className="flex gap-2">
                 <Hotspot onClick={() => onHotspot(0, "اختراق فوري! USB المفخخة تُشغّل كودها الخبيث تلقائياً عند الفتح. حتى قبل أن تقرأ أي ملف، البرنامج الضار ينسخ نفسه على جهازك.")}
-                  className="flex-1 py-1.5 bg-sky-600/80 text-white text-[11px] font-bold rounded-lg text-center">
+                  className="flex-1 py-1.5 bg-[#0078d4] text-white text-[11px] font-bold rounded-lg text-center">
                   فتح الملفات
                 </Hotspot>
                 <Hotspot onClick={() => onHotspot(20, "صحيح تماماً! فريق الأمن يتعامل مع الـUSB في بيئة معزولة (sandbox) ويحلل محتواها ويحذر الموظفين من هذا النوع من الهجمات.")}
-                  className="flex-1 py-1.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold rounded-lg text-center">
+                  className="flex-1 py-1.5 bg-[#2d2d2d] border border-[#4a4a4a] text-white/70 text-[11px] font-bold rounded-lg text-center">
                   إبلاغ الأمن
                 </Hotspot>
               </div>
@@ -482,32 +498,32 @@ function EvilTwinSim({ onHotspot }: { onHotspot: (pts: Pts, fb: string) => void 
         <div className="p-4 flex flex-col gap-2.5" dir="rtl">
           {/* Safe network */}
           <Hotspot onClick={() => onHotspot(20, "قرار صحيح! الشبكة المحمية بـ WPA3 هي شبكة الشركة الرسمية. تجنّب دائماً الشبكات المفتوحة في بيئات العمل — لا يوجد سبب وجيه لشبكة عمل مفتوحة.")}
-            className="flex items-center gap-3 px-4 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-              <Wifi className="h-4 w-4 text-emerald-400"/>
+            className="flex items-center gap-3 px-4 py-3 bg-muted/10 border border-border rounded-xl">
+            <div className="w-9 h-9 rounded-lg bg-muted/30 border border-border flex items-center justify-center shrink-0">
+              <Wifi className="h-4 w-4 text-foreground/70"/>
             </div>
             <div className="flex-1 text-right">
               <p className="text-sm font-bold text-foreground">Corporate_Secure</p>
-              <p className="text-xs text-emerald-400">🔒 محمية بكلمة مرور — WPA3</p>
+              <p className="text-xs text-muted-foreground">🔒 محمية بكلمة مرور — WPA3</p>
             </div>
             <div className="flex flex-col items-end gap-0.5">
-              <div className="flex gap-0.5">{[1,2,3,4].map(b=><div key={b} className="w-1 bg-emerald-400 rounded-sm" style={{height:`${b*4}px`}}/>)}</div>
+              <div className="flex gap-0.5">{[1,2,3,4].map(b=><div key={b} className="w-1 bg-foreground/40 rounded-sm" style={{height:`${b*4}px`}}/>)}</div>
               <span className="text-[9px] text-muted-foreground">قوية</span>
             </div>
           </Hotspot>
           {/* Evil Twin */}
           <Hotspot onClick={() => onHotspot(0, "اتصلت بشبكة المهاجم! هو الآن يراقب كل بياناتك بأسلوب Man-in-the-Middle ويعترض كلمات مرورك وجلساتك المصرفية. الشبكات المفتوحة خطر دائم.")}
-            className="flex items-center gap-3 px-4 py-3 bg-sky-500/5 border border-sky-500/20 rounded-xl relative">
-            <div className="absolute top-2 left-3 text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full font-bold">جديدة!</div>
-            <div className="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center shrink-0">
-              <Wifi className="h-4 w-4 text-sky-400"/>
+            className="flex items-center gap-3 px-4 py-3 bg-muted/10 border border-border rounded-xl relative">
+            <div className="absolute top-2 left-3 text-[9px] bg-muted/40 text-muted-foreground px-1.5 py-0.5 rounded-full font-bold">جديدة</div>
+            <div className="w-9 h-9 rounded-lg bg-muted/30 border border-border flex items-center justify-center shrink-0">
+              <Wifi className="h-4 w-4 text-foreground/70"/>
             </div>
             <div className="flex-1 text-right">
               <p className="text-sm font-bold text-foreground">Corporate_Free_Speed</p>
-              <p className="text-xs text-sky-300">🔓 مفتوحة بدون كلمة مرور — أسرع!</p>
+              <p className="text-xs text-muted-foreground">🔓 مفتوحة بدون كلمة مرور — أسرع!</p>
             </div>
             <div className="flex flex-col items-end gap-0.5">
-              <div className="flex gap-0.5">{[1,2,3,4,5].map(b=><div key={b} className="w-1 bg-sky-400 rounded-sm" style={{height:`${b*4}px`}}/>)}</div>
+              <div className="flex gap-0.5">{[1,2,3,4,5].map(b=><div key={b} className="w-1 bg-foreground/40 rounded-sm" style={{height:`${b*4}px`}}/>)}</div>
               <span className="text-[9px] text-muted-foreground">ممتازة</span>
             </div>
           </Hotspot>
@@ -544,7 +560,7 @@ function CloudSpoofSim({ onHotspot }: { onHotspot: (pts: Pts, fb: string) => voi
                 <Trash2 className="h-2.5 w-2.5"/> حذف
               </Hotspot>
               <Hotspot onClick={() => onHotspot(20, "مثالي! إبلاغ فريق الأمن يحلل الإيميل ويحظر نطاق g00gle-docs.com ويحذر جميع الموظفين من هذه الحملة فوراً.")}
-                className="flex items-center gap-1 px-2 py-0.5 text-[10px] bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-md">
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] bg-muted/60 border border-border text-muted-foreground rounded-md">
                 <Flag className="h-2.5 w-2.5"/> إبلاغ
               </Hotspot>
             </div>
@@ -555,7 +571,7 @@ function CloudSpoofSim({ onHotspot }: { onHotspot: (pts: Pts, fb: string) => voi
               <div className="flex gap-2">
                 <span className="w-14 shrink-0 text-right">المُرسِل:</span>
                 <Hotspot onClick={() => onHotspot(5, "لاحظت النطاق المزيف g00gle-docs.com! هذا وعي جيد، لكن مجرد التحقق من العنوان دون حذف الإيميل والإبلاغ عنه لا يكفي لحماية الآخرين.")}
-                  className="font-mono bg-muted/50 px-1.5 py-0.5 rounded text-rose-400 inline-block">
+                  className="font-mono bg-muted/50 px-1.5 py-0.5 rounded text-foreground/80 inline-block">
                   drive-share@g00gle-docs.com
                 </Hotspot>
               </div>
@@ -600,7 +616,7 @@ function LinkedinPhishSim({ onHotspot }: { onHotspot: (pts: Pts, fb: string) => 
             </div>
             <span className="text-white/70 text-xs font-bold flex-1">LinkedIn — رسائل مباشرة</span>
             <Hotspot onClick={() => onHotspot(20, "ممتاز! إبلاغ LinkedIn يُعلّق الحساب المزيف ويوقف الهجوم قبل استهداف محترفين آخرين. الحسابات المزيفة تستهدف عشرات الأشخاص يومياً.")}
-              className="flex items-center gap-1 px-2 py-0.5 text-[10px] bg-rose-500/15 border border-rose-500/30 text-rose-400 rounded-md">
+              className="flex items-center gap-1 px-2 py-0.5 text-[10px] bg-[#283540] border border-[#38434f] text-white/50 rounded-md">
               <Flag className="h-2.5 w-2.5"/> إبلاغ عن الحساب
             </Hotspot>
           </div>
@@ -690,18 +706,18 @@ function TailgatingSim({ onHotspot }: { onHotspot: (pts: Pts, fb: string) => voi
                 </div>
               </div>
             </div>
-            {/* Action buttons */}
+            {/* Action buttons — all neutral, no color hints */}
             <div className="flex flex-col gap-2 pt-1">
               <Hotspot onClick={() => onHotspot(0, "سمحت لشخص غير مصرح له بالدخول! يمكنه الآن سرقة معدات أو الوصول لأجهزة في القسم الآمن. الأشخاص ذوو النوايا السيئة يتعمدون شغل أيديهم لاستثارة مشاعر المساعدة.")}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm font-bold rounded-xl">
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-muted/30 border border-border text-foreground/70 text-sm font-medium rounded-xl">
                 <DoorOpen className="h-4 w-4"/> أبقِ الباب مفتوحاً
               </Hotspot>
               <Hotspot onClick={() => onHotspot(10, "قرار آمن — أغلقت الباب. لكن الشخص قد يحاول مع موظف آخر. إبلاغ فريق الأمن يعطيهم فرصة للتحقق من هوية هذا الشخص.")}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm font-bold rounded-xl">
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-muted/30 border border-border text-foreground/70 text-sm font-medium rounded-xl">
                 <X className="h-4 w-4"/> اعتذر وأغلق الباب
               </Hotspot>
               <Hotspot onClick={() => onHotspot(20, "البروتوكول الأمني الكامل! طلب البطاقة يكشف إن كان موظفاً حقيقياً، وإبلاغ فريق الأمن يمنع الشخص من المحاولة مجدداً مع موظف آخر.")}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-sm font-bold rounded-xl">
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-muted/30 border border-border text-foreground/70 text-sm font-medium rounded-xl">
                 <ShieldCheck className="h-4 w-4"/> اطلب بطاقته وأبلِغ الأمن
               </Hotspot>
             </div>
