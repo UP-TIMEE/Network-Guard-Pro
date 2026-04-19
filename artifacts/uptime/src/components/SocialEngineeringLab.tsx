@@ -5,7 +5,7 @@ import {
   Monitor, Usb, Globe, X, ChevronRight, RotateCcw,
   Battery, Signal, Wifi, WifiOff, Briefcase, DoorOpen,
   UserCheck, FileText, Flag, MessageSquare, Mail,
-  PhoneCall, ShieldOff, Mic, MicOff
+  PhoneCall, ShieldOff, Mic, MicOff, Smartphone
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -485,58 +485,103 @@ function CeoFraudSim({ onHotspot }: { onHotspot: (pts: Pts, fb: string) => void 
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SIMULATOR 7 — Evil Twin WiFi
-// Hotspots: evil twin (0) | secure network (20)
+// Hotspots: evil twin (0) | iPhone hotspot (10) | secure network (20)
 // ═══════════════════════════════════════════════════════════════════════════════
+function SignalBars({ bars, color = "bg-blue-500" }: { bars: number; color?: string }) {
+  return (
+    <div className="flex items-end gap-[3px]">
+      {[1,2,3,4,5].slice(0,bars > 5 ? 5 : bars).map((_, i) => (
+        <div key={i} className={`w-[3px] rounded-sm ${i < bars ? color : "bg-foreground/15"}`} style={{height:`${(i+1)*4}px`}}/>
+      ))}
+      {Array.from({length: Math.max(0, 5 - bars)}).map((_, i) => (
+        <div key={`e${i}`} className="w-[3px] rounded-sm bg-foreground/15" style={{height:`${(bars+i+1)*4}px`}}/>
+      ))}
+    </div>
+  );
+}
+
+function NetRow({
+  icon, iconBg, name, badge, sub, bars, barColor, onClick, disabled = false
+}: {
+  icon: React.ReactNode; iconBg: string; name: string; badge?: React.ReactNode;
+  sub: string; bars: number; barColor?: string; onClick?: () => void; disabled?: boolean;
+}) {
+  const inner = (
+    <div className={`flex flex-row justify-between items-center p-3.5 rounded-xl border transition-all ${disabled ? "opacity-40 border-border bg-muted/10 cursor-default" : "border-border bg-muted/10 cursor-pointer"}`}>
+      {/* Signal bars — left side (visually leftmost in LTR render, rightmost in RTL view) */}
+      <div className="flex flex-col items-center gap-0.5 shrink-0 w-10">
+        <div className="flex items-end gap-[3px]">
+          {[4,8,12,16,20].map((h,i) => (
+            <div key={i} className={`w-[3px] rounded-sm ${i < bars ? (barColor ?? "bg-blue-500") : "bg-foreground/20"}`} style={{height:`${h}px`}}/>
+          ))}
+        </div>
+        <span className="text-[9px] text-muted-foreground mt-0.5">{bars >= 5 ? "ممتازة" : bars >= 4 ? "قوية" : "ضعيفة"}</span>
+      </div>
+      {/* Right side: icon + name row + subtitle */}
+      <div className="flex flex-row items-center gap-3 flex-1 justify-end" dir="rtl">
+        <div className="flex flex-col items-end gap-0.5">
+          <div className="flex flex-row items-center gap-2">
+            {badge}
+            <span className="text-sm font-bold text-foreground">{name}</span>
+          </div>
+          <span className="text-xs text-muted-foreground">{sub}</span>
+        </div>
+        <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+  if (disabled || !onClick) return inner;
+  return <Hotspot onClick={onClick} className="block w-full">{inner}</Hotspot>;
+}
+
 function EvilTwinSim({ onHotspot }: { onHotspot: (pts: Pts, fb: string) => void }) {
   return (
     <div className="flex justify-center py-4">
       <div className="w-full max-w-md bg-card border border-border rounded-2xl overflow-hidden">
+        {/* Header */}
         <div className="flex items-center gap-2.5 px-4 py-3 bg-muted/40 border-b border-border" dir="rtl">
-          <Wifi className="h-5 w-5 text-sky-400"/>
+          <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+            <Wifi className="h-4 w-4 text-blue-400"/>
+          </div>
           <div>
             <p className="font-bold text-foreground text-sm">اختيار شبكة Wi-Fi</p>
             <p className="text-muted-foreground text-xs">٣ شبكات متاحة في هذا الموقع</p>
           </div>
         </div>
-        <div className="p-4 flex flex-col gap-2.5" dir="rtl">
-          {/* Safe network */}
-          <Hotspot onClick={() => onHotspot(20, "قرار صحيح! الشبكة المحمية بـ WPA3 هي شبكة الشركة الرسمية. تجنّب دائماً الشبكات المفتوحة في بيئات العمل — لا يوجد سبب وجيه لشبكة عمل مفتوحة.")}
-            className="flex items-center gap-3 px-4 py-3 bg-muted/10 border border-border rounded-xl">
-            <div className="w-9 h-9 rounded-lg bg-muted/30 border border-border flex items-center justify-center shrink-0">
-              <Wifi className="h-4 w-4 text-foreground/70"/>
-            </div>
-            <div className="flex-1 text-right">
-              <p className="text-sm font-bold text-foreground">Corporate_Secure</p>
-              <p className="text-xs text-muted-foreground">🔒 محمية بكلمة مرور — WPA3</p>
-            </div>
-            <div className="flex flex-col items-end gap-0.5">
-              <div className="flex gap-0.5">{[1,2,3,4].map(b=><div key={b} className="w-1 bg-foreground/40 rounded-sm" style={{height:`${b*4}px`}}/>)}</div>
-              <span className="text-[9px] text-muted-foreground">قوية</span>
-            </div>
-          </Hotspot>
-          {/* Evil Twin */}
-          <Hotspot onClick={() => onHotspot(0, "اتصلت بشبكة المهاجم! هو الآن يراقب كل بياناتك بأسلوب Man-in-the-Middle ويعترض كلمات مرورك وجلساتك المصرفية. الشبكات المفتوحة خطر دائم.")}
-            className="flex items-center gap-3 px-4 py-3 bg-muted/10 border border-border rounded-xl">
-            <div className="w-9 h-9 rounded-lg bg-muted/30 border border-border flex items-center justify-center shrink-0">
-              <Wifi className="h-4 w-4 text-foreground/70"/>
-            </div>
-            <div className="flex-1 text-right">
-              <div className="flex items-center justify-end gap-2 mb-0.5">
-                <span className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold leading-none">جديدة</span>
-                <p className="text-sm font-bold text-foreground">Corporate_Free_Speed</p>
-              </div>
-              <p className="text-xs text-muted-foreground">🔓 مفتوحة بدون كلمة مرور — أسرع!</p>
-            </div>
-            <div className="flex flex-col items-center gap-0.5 shrink-0">
-              <div className="flex items-end gap-0.5">{[1,2,3,4,5].map(b=><div key={b} className="w-1 bg-foreground/40 rounded-sm" style={{height:`${b*4}px`}}/>)}</div>
-              <span className="text-[9px] text-muted-foreground">ممتازة</span>
-            </div>
-          </Hotspot>
-          {/* Weak other network */}
-          <div className="flex items-center gap-3 px-4 py-3 bg-muted/20 border border-border rounded-xl opacity-40 cursor-default">
-            <div className="w-9 h-9 rounded-lg bg-muted/40 flex items-center justify-center shrink-0"><WifiOff className="h-4 w-4 text-muted-foreground"/></div>
-            <div className="flex-1 text-right"><p className="text-sm text-muted-foreground">Visitor_Net</p><p className="text-xs text-muted-foreground">🔒 محمية</p></div>
-          </div>
+        <div className="p-4 flex flex-col gap-2" dir="rtl">
+          {/* 1. Secure corporate network — 20 pts */}
+          <NetRow
+            onClick={() => onHotspot(20, "قرار صحيح! الشبكة المحمية بـ WPA3 هي شبكة الشركة الرسمية. تجنّب دائماً الشبكات المفتوحة في بيئات العمل — لا يوجد سبب وجيه لشبكة عمل مفتوحة.")}
+            icon={<Wifi className="h-5 w-5 text-blue-400"/>}
+            iconBg="bg-blue-500/15"
+            name="Corporate_Secure"
+            sub="🔒 محمية بكلمة مرور — WPA3"
+            bars={4}
+            barColor="bg-blue-500"
+          />
+          {/* 2. Evil Twin — 0 pts */}
+          <NetRow
+            onClick={() => onHotspot(0, "اتصلت بشبكة المهاجم! هو الآن يراقب كل بياناتك بأسلوب Man-in-the-Middle ويعترض كلمات مرورك وجلساتك المصرفية. الشبكات المفتوحة خطر دائم.")}
+            icon={<Wifi className="h-5 w-5 text-foreground/60"/>}
+            iconBg="bg-muted/40"
+            name="Corporate_Free_Speed"
+            badge={<span className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold leading-none">جديدة</span>}
+            sub="🔓 مفتوحة بدون كلمة مرور — أسرع!"
+            bars={5}
+            barColor="bg-foreground/40"
+          />
+          {/* 3. iPhone Hotspot — 10 pts */}
+          <NetRow
+            onClick={() => onHotspot(10, "أحسنت! استخدام نقطة الاتصال الشخصية من هاتفك هو التصرف الآمن والبديل الأفضل عند الشك في شبكات الواي فاي العامة.")}
+            icon={<Smartphone className="h-5 w-5 text-green-400"/>}
+            iconBg="bg-green-500/15"
+            name="iPhone"
+            sub="نقطة اتصال شخصية · مؤمّنة"
+            bars={3}
+            barColor="bg-green-500"
+          />
         </div>
       </div>
     </div>
