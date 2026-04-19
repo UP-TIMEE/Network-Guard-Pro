@@ -24,8 +24,8 @@ const SCENARIOS: Scenario[] = [
     attackName: "التصيد الإلكتروني (Phishing)",
     correctBtn: "تجاهل وإبلاغ 🚩",
     wrongBtn:   "الضغط على الرابط",
-    correctExp: "قرار ممتاز! الإبلاغ عن رسائل التصيد يحمي الشبكة بأكملها. نطاق المُرسِل المزيف (company-updates-hr.net) وأسلوب الإلحاح علامتان واضحتان.",
-    wrongExp:   "وقعت في الفخ! رابط التصيد جمع بياناتك البنكية. دائماً تحقق من نطاق المُرسِل قبل النقر على أي رابط.",
+    correctExp: "قرار ممتاز! لاحظت الخدعة البصرية — البريد hr@uptirne.com يستخدم حرفَي (rn) ليشبه حرف (m) في كلمة uptime. هذا ما يُسمى Homoglyph Attack.",
+    wrongExp:   "وقعت في الفخ! البريد hr@uptirne.com مزيف — (rn) وليس (m). دائماً تحقق من كل حرف في نطاق المُرسِل قبل النقر على أي رابط.",
   },
   {
     id: 2,
@@ -181,7 +181,7 @@ function EmailSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
           <div className="p-3 border-b border-border">
             <p className="font-bold text-foreground text-sm mb-2">⚠ عاجل: يجب تحديث بيانات الراتب خلال ٢٤ ساعة</p>
             <div className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
-              <div className="flex gap-2"><span className="w-12 text-right shrink-0">المُرسِل:</span><span className="font-mono bg-muted/50 px-1.5 py-0.5 rounded text-rose-300">hr-noreply@company-updates-hr.net</span></div>
+              <div className="flex gap-2"><span className="w-12 text-right shrink-0">المُرسِل:</span><span className="font-mono bg-muted/50 px-1.5 py-0.5 rounded text-foreground">hr@uptirne.com</span></div>
               <div className="flex gap-2"><span className="w-12 text-right shrink-0">إلى:</span><span>موظف عزيز</span></div>
             </div>
           </div>
@@ -192,7 +192,7 @@ function EmailSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
             <button onClick={() => onChoice("wrong")} className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg text-xs transition-colors">
               <Lock className="h-3.5 w-3.5"/> تحديث البيانات الآن
             </button>
-            <p className="text-[11px] text-muted-foreground">الرابط: <span className="font-mono text-rose-300 underline cursor-pointer" onClick={() => onChoice("wrong")}>http://company-updates-hr.net/payroll?token=xK9</span></p>
+            <p className="text-[11px] text-muted-foreground">الرابط: <span className="font-mono text-blue-500 hover:underline cursor-pointer" onClick={() => onChoice("wrong")}>http://portal.uptirne.com/payroll-update</span></p>
           </div>
           <div className="p-2.5 border-t border-border bg-muted/20 flex items-center gap-2">
             <button onClick={() => onChoice("correct")} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 border border-rose-500/40 hover:bg-rose-500/20 text-rose-300 font-bold rounded-lg text-xs transition-colors">
