@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { ExternalLink, RefreshCw, AlertTriangle, Calendar, Rss, ShieldAlert } from "lucide-react";
+import {
+  ExternalLink, RefreshCw, AlertTriangle, Calendar,
+  Rss, ShieldAlert, Shield, Lock, Wifi, Bug, Eye, Server,
+} from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -12,52 +15,64 @@ interface NewsItem {
   source: string;
 }
 
-const COLOR_PALETTE = [
-  "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  "bg-violet-500/10 text-violet-400 border-violet-500/20",
-  "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
-  "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  "bg-rose-500/10 text-rose-400 border-rose-500/20",
-  "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
-  "bg-teal-500/10 text-teal-400 border-teal-500/20",
+/* ── Consistent palettes, hashed by source name ── */
+const BADGE_COLORS = [
+  "bg-blue-600 text-white",
+  "bg-violet-600 text-white",
+  "bg-cyan-600 text-white",
+  "bg-emerald-600 text-white",
+  "bg-amber-600 text-white",
+  "bg-rose-600 text-white",
+  "bg-indigo-600 text-white",
+  "bg-teal-600 text-white",
 ];
 
-/** Returns a consistent color for a given source name via simple char-code hash */
-function getSourceColor(source: string): string {
-  let hash = 0;
+const THUMB_GRADIENTS = [
+  "from-blue-600 to-indigo-700",
+  "from-violet-600 to-purple-700",
+  "from-cyan-600 to-blue-700",
+  "from-emerald-600 to-teal-700",
+  "from-amber-500 to-orange-600",
+  "from-rose-600 to-pink-700",
+  "from-indigo-600 to-blue-800",
+  "from-teal-500 to-cyan-700",
+];
+
+const THUMB_ICONS = [Shield, Lock, Wifi, Bug, Eye, Server, ShieldAlert, Rss];
+
+function hashSource(source: string): number {
+  let h = 0;
   for (let i = 0; i < source.length; i++) {
-    hash = (hash * 31 + source.charCodeAt(i)) & 0x7fffffff;
+    h = (h * 31 + source.charCodeAt(i)) & 0x7fffffff;
   }
-  return COLOR_PALETTE[hash % COLOR_PALETTE.length];
+  return h;
 }
 
 function formatDate(iso: string, lang: string): string {
   try {
-    const d = new Date(iso);
-    return d.toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+    return new Date(iso).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
+      year: "numeric", month: "short", day: "numeric",
     });
   } catch {
     return iso.slice(0, 10);
   }
 }
 
-function SkeletonRow() {
+/* ── Skeleton card (matches new 2-col grid layout) ── */
+function SkeletonCard() {
   return (
-    <div className="flex gap-4 p-5 bg-card border border-border rounded-2xl animate-pulse">
-      <div className="flex flex-col gap-2 w-28 flex-shrink-0">
-        <div className="h-5 w-24 bg-muted rounded-full" />
-        <div className="h-3 w-20 bg-muted rounded-full" />
-        <div className="h-3 w-16 bg-muted rounded-full mt-auto" />
-      </div>
-      <div className="flex-1 space-y-2">
-        <div className="h-5 w-full bg-muted rounded-md" />
-        <div className="h-5 w-5/6 bg-muted rounded-md" />
-        <div className="h-3 w-full bg-muted rounded-md mt-2" />
-        <div className="h-3 w-4/5 bg-muted rounded-md" />
+    <div className="bg-card border border-border rounded-2xl overflow-hidden animate-pulse flex flex-col">
+      <div className="h-28 bg-muted/60" />
+      <div className="p-5 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <div className="h-5 w-20 bg-muted rounded-full" />
+          <div className="h-4 w-24 bg-muted rounded-full" />
+        </div>
+        <div className="h-4 w-full bg-muted rounded-md" />
+        <div className="h-4 w-4/5 bg-muted rounded-md" />
+        <div className="h-3 w-full bg-muted rounded-md" />
+        <div className="h-3 w-3/4 bg-muted rounded-md" />
+        <div className="mt-2 h-8 w-32 bg-muted rounded-lg" />
       </div>
     </div>
   );
@@ -67,16 +82,16 @@ export function NewsSection() {
   const { dir, lang } = useLanguage();
   const isRtl = dir === "rtl";
 
-  const [items, setItems]           = useState<NewsItem[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState(false);
+  const [items, setItems]             = useState<NewsItem[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState(false);
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
 
   const fetchNews = async () => {
     setLoading(true);
     setError(false);
     try {
-      const res = await fetch(`${BASE}/api/news?limit=15`, {
+      const res = await fetch(`${BASE}/api/news?limit=16`, {
         signal: AbortSignal.timeout(20000),
       });
       if (!res.ok) throw new Error("bad response");
@@ -93,11 +108,11 @@ export function NewsSection() {
   useEffect(() => { fetchNews(); }, []);
 
   return (
-    <section id="news" className="py-16 px-4 border-t border-border" dir={dir}>
-      <div className="container mx-auto max-w-4xl">
+    <section id="news" className="py-14 px-4 border-t border-border" dir={dir}>
+      <div className="container mx-auto max-w-5xl">
 
         {/* ── Header ── */}
-        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
+        <div className="flex items-start justify-between mb-10 flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
               <ShieldAlert className="h-5 w-5 text-primary" />
@@ -113,13 +128,10 @@ export function NewsSection() {
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            {/* Google News badge */}
             <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border bg-red-500/10 text-red-400 border-red-500/20 font-medium">
               <Rss className="h-3 w-3" />
               Google News
             </span>
-
-            {/* Last fetched + Refresh */}
             <div className="flex items-center gap-2">
               {lastFetched && (
                 <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -162,70 +174,83 @@ export function NewsSection() {
           </div>
         )}
 
-        {/* ── Skeleton list ── */}
+        {/* ── Skeleton grid ── */}
         {loading && (
-          <div className="flex flex-col gap-3">
-            {[...Array(5)].map((_, i) => <SkeletonRow key={i} />)}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
           </div>
         )}
 
-        {/* ── News list (vertical, full-width) ── */}
+        {/* ── News grid ── */}
         {!loading && !error && items.length > 0 && (
-          <div className="flex flex-col gap-3">
-            {items.map((item, i) => (
-              <article
-                key={i}
-                className="group bg-card border border-border rounded-2xl hover:border-foreground/20 hover:shadow-md transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 overflow-hidden"
-                style={{ animationDelay: `${Math.min(i * 40, 400)}ms` }}
-              >
-                <div className={`flex gap-0 h-full ${isRtl ? "flex-row-reverse" : "flex-row"}`}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {items.map((item, i) => {
+              const h          = hashSource(item.source);
+              const gradient   = THUMB_GRADIENTS[h % THUMB_GRADIENTS.length];
+              const badgeColor = BADGE_COLORS[h % BADGE_COLORS.length];
+              const ThumbIcon  = THUMB_ICONS[h % THUMB_ICONS.length];
 
-                  {/* ── Meta column (source · date · link) ── */}
-                  <div
-                    className={`
-                      flex flex-col gap-2 px-4 py-4 w-[140px] flex-shrink-0
-                      border-border/60 bg-muted/20
-                      ${isRtl ? "border-l items-end text-right" : "border-r items-start text-left"}
-                    `}
-                  >
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full border font-semibold leading-tight text-center ${getSourceColor(item.source)}`}
-                    >
-                      {item.source}
-                    </span>
+              return (
+                <article
+                  key={i}
+                  className="group flex flex-col bg-card border border-border rounded-2xl overflow-hidden
+                             hover:-translate-y-1 hover:border-cyan-500/50
+                             hover:shadow-[0_0_20px_rgba(6,182,212,0.18)]
+                             transition-all duration-300 animate-in fade-in slide-in-from-bottom-2"
+                  style={{ animationDelay: `${Math.min(i * 35, 350)}ms` }}
+                >
+                  {/* ── Gradient thumbnail strip ── */}
+                  <div className={`relative h-28 bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+                    <div className="absolute inset-0 opacity-10"
+                      style={{
+                        backgroundImage: "radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)",
+                        backgroundSize: "30px 30px",
+                      }}
+                    />
+                    <div className="relative z-10 p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
+                      <ThumbIcon className="h-8 w-8 text-white drop-shadow-lg" />
+                    </div>
+                  </div>
 
-                    <span className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
-                      <Calendar className="h-3 w-3 flex-shrink-0" />
-                      <span className="leading-tight">{formatDate(item.date, lang)}</span>
-                    </span>
+                  {/* ── Content ── */}
+                  <div className="flex flex-col flex-1 p-5 gap-3">
+                    {/* Source badge + date */}
+                    <div className={`flex items-center gap-2 flex-wrap ${isRtl ? "flex-row-reverse" : ""}`}>
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${badgeColor}`}>
+                        {item.source}
+                      </span>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {formatDate(item.date, lang)}
+                      </span>
+                    </div>
 
+                    {/* Title */}
+                    <h3 className="font-bold text-foreground text-sm leading-snug line-clamp-2 group-hover:text-cyan-400 transition-colors duration-200">
+                      {item.title}
+                    </h3>
+
+                    {/* Description */}
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 flex-1">
+                      {item.description}
+                    </p>
+
+                    {/* CTA button */}
                     <a
                       href={item.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/70 transition-colors"
+                      className={`mt-1 self-start inline-flex items-center gap-2 px-4 py-2 rounded-lg
+                                 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold
+                                 transition-colors duration-200 ${isRtl ? "flex-row-reverse" : ""}`}
                     >
-                      <ExternalLink className="h-3 w-3" />
-                      {isRtl ? "اقرأ" : "Read"}
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      {isRtl ? "اقرأ المقال" : "Read Article"}
                     </a>
                   </div>
-
-                  {/* ── Content column (title · description) ── */}
-                  <div className="flex-1 px-5 py-4 flex flex-col gap-2 min-w-0">
-                    <h3
-                      className="font-bold text-foreground text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2"
-                    >
-                      {item.title}
-                    </h3>
-
-                    <p className="text-xs text-muted-foreground/80 leading-relaxed line-clamp-2">
-                      {item.description}
-                    </p>
-                  </div>
-
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
 
