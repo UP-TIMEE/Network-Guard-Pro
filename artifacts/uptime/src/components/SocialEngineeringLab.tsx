@@ -70,8 +70,8 @@ const SCENARIOS: Scenario[] = [
     attackName: "احتيال الرؤساء (CEO Fraud)",
     correctBtn: "الاتصال بالمدير للتأكد",
     wrongBtn:   "شراء البطاقات وإرسالها",
-    correctExp: "قرار سليم! الاتصال المباشر بالمدير هو الإجراء الصحيح دائماً عند الطلبات المالية العاجلة والسرية عبر الرسائل. المحتال يعتمد على الإلحاح لمنعك من التحقق.",
-    wrongExp:   "وقعت في فخ CEO Fraud! الرقم المنتحِل للمدير التنفيذي استطاع الحصول على بطاقات الهدايا. دائماً تحقق بقناة اتصال مختلفة قبل أي تحويل مالي.",
+    correctExp: "قرار سليم! الاتصال الصوتي المباشر بالمدير هو الإجراء الوحيد الصحيح عند الطلبات المالية عبر الرسائل. المحتال يعتمد على الإلحاح والثقة لمنعك من التحقق.",
+    wrongExp:   "لقد وقعت في الفخ! المخترقون يفضلون طلب بطاقات الهدايا لأن الأموال تصبح غير قابلة للتتبع أو الاسترجاع بمجرد إرسال الكود، عكس الحوالات البنكية. لا تنفذ طلبات مالية غير معتادة عبر الرسائل النصية دون تحقق صوتي.",
   },
   {
     id: 7,
@@ -523,9 +523,9 @@ function CeoFraudSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void })
         <div className="bg-[#0b1015] px-3 py-3 min-h-[230px] flex flex-col gap-2.5" style={{backgroundImage:"url(\"data:image/svg+xml,%3Csvg opacity='0.03' xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3C/svg%3E\")"}}>
           {/* Messages */}
           {[
-            "مرحباً، أنا في اجتماع سري مع مجلس الإدارة الآن.",
-            "أحتاج منك خدمة عاجلة وسرية جداً — لا تُخبر أحداً.",
-            "اشترِ ٥ بطاقات Google Play بقيمة ٥٠٠ ريال لكل منها وأرسل لي الأكواد فوراً. سأرد لك المبلغ غداً.",
+            "أهلاً بك. أنا حالياً في اجتماع مغلق مع عملاء VIP للشركة ولا أستطيع الخروج.",
+            "أحتاج إرسال بطاقات هدايا رقمية (Apple / Amazon) بقيمة 2000 ريال كعربون شكر لهم فوراً، لكن بطاقة الشركة البنكية معلقة معي الآن.",
+            "الرجاء شراء البطاقات من حسابك وإرسال الأكواد لي هنا بسرعة. سأوجّه قسم المالية بتعويضك غداً صباحاً.",
           ].map((msg, i) => (
             <div key={i} className="flex justify-end">
               <div className="max-w-[80%] bg-[#1f2c34] px-3 py-2 rounded-xl rounded-tl-sm">
@@ -537,7 +537,7 @@ function CeoFraudSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void })
           <div className="flex-1"/>
           <div className="flex items-center gap-1.5 px-2 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-xl" dir="rtl">
             <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0"/>
-            <p className="text-amber-300 text-[10px]">طلب مالي عاجل وسري — تحقق!</p>
+            <p className="text-amber-300 text-[10px]">طلب مالي عبر رسائل — لا ترسل أكواداً قبل التحقق الصوتي!</p>
           </div>
         </div>
         {/* Actions */}
