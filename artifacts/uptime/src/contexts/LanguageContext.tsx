@@ -64,7 +64,7 @@ export const translations = {
     footer: {
       devBy: "تم التطوير بواسطة",
       supervision: "بإشراف",
-      year: "2025",
+      year: "2026",
     },
   },
 
@@ -129,7 +129,7 @@ export const translations = {
     footer: {
       devBy: "Developed by",
       supervision: "Under supervision of",
-      year: "2025",
+      year: "2026",
     },
   },
 } as const;
