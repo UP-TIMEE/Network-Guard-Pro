@@ -134,16 +134,16 @@ export function NewsSection() {
           </div>
         )}
 
-        {/* ── Skeleton grid ── */}
+        {/* ── Skeleton list ── */}
         {loading && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="flex flex-col gap-6 max-w-4xl mx-auto">
             {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
           </div>
         )}
 
-        {/* ── News grid — Classic Colored UI ── */}
+        {/* ── News list — Classic Colored UI ── */}
         {!loading && !error && items.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="flex flex-col gap-6 max-w-4xl mx-auto">
             {items.map((item, i) => (
               <article
                 key={i}
