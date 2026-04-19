@@ -499,8 +499,43 @@ function stripHtml(raw: string): string {
     .trim();
 }
 
+/** Simple string hash → stable index */
+function strHash(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) & 0x7fffffff;
+  return h;
+}
+
+/**
+ * Build a unique contextual excerpt from the article title when the RSS feed
+ * provides no real description (Google News almost never does).
+ * We extract the most informative Arabic words from the title and weave them
+ * into one of several natural-sounding sentence templates.
+ */
+function buildContextualDesc(title: string, source: string): string {
+  // Extract significant Arabic words (≥4 chars, skip common function words)
+  const STOP = new Set(["على", "عبر", "من", "في", "إلى", "عن", "مع", "هذا", "هذه",
+    "بعد", "قبل", "لكن", "وأن", "وقد", "الذي", "التي", "وهو", "وهي", "يصدر", "تصدر"]);
+  const words = (title.match(/[\u0600-\u06FF]{4,}/g) ?? [])
+    .filter(w => !STOP.has(w))
+    .slice(0, 5);
+
+  const phrase = words.length >= 2 ? words.slice(0, 3).join(" و") : title.slice(0, 40);
+
+  const templates = [
+    `تُصدر ${source} تقريراً حول ${phrase}، وتستعرض أبرز التطورات والمخاطر المرتبطة بهذا الملف الأمني.`,
+    `خبراء ${source} يسلّطون الضوء على قضية ${phrase} وما تمثله من تحديات للأمن الرقمي في المنطقة.`,
+    `تحليل معمّق من ${source}: كيف تؤثر ${phrase} على مشهد الأمن السيبراني وما الإجراءات الموصى بها؟`,
+    `${source} تنشر تفاصيل جديدة تخصّ ${phrase}، في ظل تصاعد الهجمات الإلكترونية على المؤسسات.`,
+    `في ضوء التطورات المتسارعة، يرصد ${source} المستجدات المتعلقة بـ${phrase} وسُبل التصدي لها.`,
+    `تحذير أمني من ${source}: ${phrase} يستدعي يقظة مضاعفة وتحديثاً فورياً للأنظمة والسياسات الحمائية.`,
+  ];
+
+  return templates[strHash(title) % templates.length];
+}
+
 router.get("/news", async (req, res) => {
-  const limit = Math.min(Number(req.query["limit"] ?? 15), 15);
+  const limit = Math.min(Number(req.query["limit"] ?? 15), 16);
 
   try {
     const feed = await rssParser.parseURL(GOOGLE_NEWS_URL);
@@ -513,15 +548,19 @@ router.get("/news", async (req, res) => {
       const title  = lastDash !== -1 ? rawTitle.slice(0, lastDash).trim() : rawTitle;
       const source = lastDash !== -1 ? rawTitle.slice(lastDash + 3).trim() : "أخبار أمنية";
 
-      // Try to extract a real description — Google News rarely provides one,
-      // so fall back to a contextual Arabic phrase when absent
-      const rawDesc = (item as any).contentSnippet ?? (item as any).description ?? "";
-      const cleaned = stripHtml(rawDesc);
-      // Google News description is usually just the title repeated — detect and discard
-      const isSameAsTitle = title.length > 0 && cleaned.includes(title.slice(0, 20));
-      const description = (!isSameAsTitle && cleaned.length > 20)
-        ? cleaned.slice(0, 200) + (cleaned.length > 200 ? "…" : "")
-        : `للاطلاع على تفاصيل هذا التقرير الأمني الصادر عن ${source}، اضغط على رابط القراءة الكاملة.`;
+      // Try every available field for a real description
+      const rawDesc = [
+        (item as any).contentSnippet,
+        (item as any)["content:encoded"],
+        (item as any).description,
+        (item as any).summary,
+      ].map(v => stripHtml(String(v ?? ""))).find(s => s.length > 30) ?? "";
+
+      // Discard if it's just the title repeated
+      const isSameAsTitle = title.length > 0 && rawDesc.includes(title.slice(0, 20));
+      const description = (!isSameAsTitle && rawDesc.length > 30)
+        ? rawDesc.slice(0, 220) + (rawDesc.length > 220 ? "…" : "")
+        : buildContextualDesc(title, source);
 
       return {
         title,
