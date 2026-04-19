@@ -2,14 +2,15 @@ import { useState, useEffect, useRef } from "react";
 import {
   Mail, MessageSquare, Smartphone, Flag, ShieldAlert, CheckCircle2,
   Inbox, Star, Trash2, Send, AlertTriangle, Lock, Phone, PhoneOff,
-  Monitor, Usb, Globe, X, ShieldCheck, ChevronRight, RotateCcw,
-  Battery, Signal, Wifi
+  Monitor, Usb, Globe, X, ChevronRight, RotateCcw,
+  Battery, Signal, Wifi, WifiOff, Cloud, Briefcase, DoorOpen,
+  Gift, UserCheck, FileText, ShieldCheck, UserX
 } from "lucide-react";
 
 // ─── Scenario data ─────────────────────────────────────────────────────────────
 interface Scenario {
   id:          number;
-  type:        "email" | "sms" | "vishing" | "baiting" | "scareware";
+  type:        "email" | "sms" | "vishing" | "baiting" | "scareware" | "ceofraud" | "eviltwin" | "cloudspoofing" | "linkedinphish" | "tailgating";
   attackName:  string;
   correctBtn:  string;   // green choice label
   wrongBtn:    string;   // red choice label
@@ -63,9 +64,54 @@ const SCENARIOS: Scenario[] = [
     correctExp: "ممتاز! النوافذ المنبثقة التي تدّعي اكتشاف فيروسات هي نفسها البرمجية الخبيثة. أغلق المتصفح كاملاً إن لزم الأمر.",
     wrongExp:   "الضغط على 'فحص' حمّل برنامجاً خبيثاً! هذه النوافذ مصممة لإثارة الذعر لدفعك للتصرف دون تفكير. المتصفح الحقيقي لا يُظهر تنبيهات بهذا الشكل.",
   },
+  {
+    id: 6,
+    type: "ceofraud",
+    attackName: "احتيال الرؤساء (CEO Fraud)",
+    correctBtn: "الاتصال بالمدير للتأكد",
+    wrongBtn:   "شراء البطاقات وإرسالها",
+    correctExp: "قرار سليم! الاتصال المباشر بالمدير هو الإجراء الصحيح دائماً عند الطلبات المالية العاجلة والسرية عبر الرسائل. المحتال يعتمد على الإلحاح لمنعك من التحقق.",
+    wrongExp:   "وقعت في فخ CEO Fraud! الرقم المنتحِل للمدير التنفيذي استطاع الحصول على بطاقات الهدايا. دائماً تحقق بقناة اتصال مختلفة قبل أي تحويل مالي.",
+  },
+  {
+    id: 7,
+    type: "eviltwin",
+    attackName: "الواي فاي الوهمي (Evil Twin)",
+    correctBtn: "الاتصال بالشبكة الآمنة",
+    wrongBtn:   "الاتصال بالشبكة السريعة",
+    correctExp: "تصرف ذكي! الشبكة المفتوحة بدون كلمة مرور في بيئة الشركة علامة خطر واضحة. المهاجم يُحاكي اسم الشبكة الرسمية لاعتراض بياناتك.",
+    wrongExp:   "اتصلت بشبكة Evil Twin! المهاجم الآن يراقب كل اتصالاتك ويعترض بياناتك بأسلوب Man-in-the-Middle. الشبكات المفتوحة في الشركات تستوجب الريبة دائماً.",
+  },
+  {
+    id: 8,
+    type: "cloudspoofing",
+    attackName: "التصيد السحابي (Cloud Spoofing)",
+    correctBtn: "التأكد من المرسل داخلياً",
+    wrongBtn:   "الضغط لتسجيل الدخول",
+    correctExp: "احتراس ممتاز! إشعارات المشاركة المزيفة تُحاكي Google Drive أو OneDrive بدقة. التحقق من المرسل عبر قناة رسمية يكشف الاحتيال فوراً.",
+    wrongExp:   "سُرقت بيانات حسابك! صفحة تسجيل الدخول كانت مزيفة. هذا النوع من الهجمات يستهدف الموظفين الذين يتلقون ملفات كثيرة ويضغطون دون تمحيص.",
+  },
+  {
+    id: 9,
+    type: "linkedinphish",
+    attackName: "تصيد التوظيف (LinkedIn Phishing)",
+    correctBtn: "تجاهل وإبلاغ",
+    wrongBtn:   "الضغط لتحميل العقد",
+    correctExp: "قرار صحيح! الروابط المختصرة مثل bit.ly تُخفي الوجهة الحقيقية. المسمى الوظيفي الرائع والراتب الخيالي أدوات إغراء كلاسيكية في هجمات التوظيف المزيف.",
+    wrongExp:   "حمّلت ملفاً ضاراً! الرابط المختصر أعاد توجيهك لموقع مزيف نزّل برنامج تجسس. عروض العمل المبالغ فيها عبر رسائل مباشرة تستوجب التحقق المزدوج دائماً.",
+  },
+  {
+    id: 10,
+    type: "tailgating",
+    attackName: "الاختراق الفيزيائي (Tailgating)",
+    correctBtn: "الاعتذار والطلب منه استخدام بطاقته",
+    wrongBtn:   "إبقاء الباب مفتوحاً مساعدةً",
+    correctExp: "تصرف احترافي! كل شخص يدخل منطقة آمنة يجب أن يُثبت هويته ببطاقته الخاصة. المساعدة الاجتماعية شعور طبيعي، لكن المهاجمين يستغلون اللطف الإنساني تحديداً.",
+    wrongExp:   "سمحت لشخص غير مصرح له بالدخول! Tailgating هو استغلال اللطف الاجتماعي لاختراق المناطق المحظورة. يمكن لهذا الشخص سرقة معدات أو وثائق سرية.",
+  },
 ];
 
-const TOTAL_PTS = 20; // per round
+const TOTAL_PTS = 10; // per round (10 × 10 = 100 total)
 
 // ─── Result modal ──────────────────────────────────────────────────────────────
 interface ModalProps {
@@ -89,7 +135,7 @@ function ResultModal({ correct, attackName, explanation, isLast, onNext }: Modal
           </div>
           <div>
             <p className={`font-black text-sm ${correct ? "text-emerald-400" : "text-rose-400"}`}>
-              {correct ? "إجابة صحيحة! +20 نقطة" : "إجابة خاطئة — 0 نقطة"}
+              {correct ? `إجابة صحيحة! +${TOTAL_PTS} نقطة` : "إجابة خاطئة — 0 نقطة"}
             </p>
             <p className="text-[11px] text-muted-foreground">{attackName}</p>
           </div>
@@ -453,6 +499,323 @@ function ScarewareSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SIMULATOR 6 — CEO Fraud (WhatsApp-style)
+// ═══════════════════════════════════════════════════════════════════════════════
+function CeoFraudSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+  const now = new Date().toLocaleTimeString("ar-SA", {hour:"2-digit", minute:"2-digit"});
+  return (
+    <div className="flex justify-center py-2">
+      <div className="w-72 rounded-[2.2rem] border-[5px] border-foreground/15 bg-[#111] overflow-hidden shadow-2xl shadow-black/60">
+        {/* Status */}
+        <div className="flex items-center justify-between px-5 py-1.5 bg-[#111]">
+          <span className="text-white text-[10px] font-bold">{now}</span>
+          <div className="flex items-center gap-1"><Signal className="h-3 w-3 text-white"/><Wifi className="h-3 w-3 text-white"/><Battery className="h-3.5 w-3.5 text-white"/></div>
+        </div>
+        {/* WhatsApp header */}
+        <div className="flex items-center gap-2.5 px-3 py-2 bg-[#075e54]">
+          <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white font-black text-sm">م</div>
+          <div>
+            <p className="text-white text-[12px] font-bold">محمد العسيري — المدير التنفيذي</p>
+            <p className="text-white/50 text-[9px]">متصل الآن</p>
+          </div>
+        </div>
+        {/* Chat */}
+        <div className="bg-[#0b1015] px-3 py-3 min-h-[230px] flex flex-col gap-2.5" style={{backgroundImage:"url(\"data:image/svg+xml,%3Csvg opacity='0.03' xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3C/svg%3E\")"}}>
+          {/* Messages */}
+          {[
+            "مرحباً، أنا في اجتماع سري مع مجلس الإدارة الآن.",
+            "أحتاج منك خدمة عاجلة وسرية جداً — لا تُخبر أحداً.",
+            "اشترِ ٥ بطاقات Google Play بقيمة ٥٠٠ ريال لكل منها وأرسل لي الأكواد فوراً. سأرد لك المبلغ غداً.",
+          ].map((msg, i) => (
+            <div key={i} className="flex justify-end">
+              <div className="max-w-[80%] bg-[#1f2c34] px-3 py-2 rounded-xl rounded-tl-sm">
+                <p className="text-white text-[11px] leading-relaxed" dir="rtl">{msg}</p>
+                <p className="text-white/30 text-[9px] text-left mt-0.5">{now} ✓✓</p>
+              </div>
+            </div>
+          ))}
+          <div className="flex-1"/>
+          <div className="flex items-center gap-1.5 px-2 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-xl" dir="rtl">
+            <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0"/>
+            <p className="text-amber-300 text-[10px]">طلب مالي عاجل وسري — تحقق!</p>
+          </div>
+        </div>
+        {/* Actions */}
+        <div className="bg-[#1c1c1e] border-t border-white/10 p-2.5 flex gap-2">
+          <button onClick={() => onChoice("wrong")} className="flex-1 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white text-[10px] font-bold rounded-xl transition-colors">شراء البطاقات</button>
+          <button onClick={() => onChoice("correct")} className="flex-1 py-2 bg-rose-500/80 hover:bg-rose-500 text-white text-[10px] font-bold rounded-xl transition-colors">الاتصال للتأكد 📞</button>
+        </div>
+        <div className="bg-[#111] flex justify-center py-1.5"><div className="w-16 h-1 rounded-full bg-white/20"/></div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SIMULATOR 7 — Evil Twin WiFi
+// ═══════════════════════════════════════════════════════════════════════════════
+function EvilTwinSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+  return (
+    <div className="flex justify-center py-4">
+      <div className="w-full max-w-md bg-card border border-border rounded-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-2.5 px-4 py-3 bg-muted/40 border-b border-border" dir="rtl">
+          <Wifi className="h-5 w-5 text-sky-400"/>
+          <div>
+            <p className="font-bold text-foreground text-sm">اختيار شبكة Wi-Fi</p>
+            <p className="text-muted-foreground text-xs">٣ شبكات متاحة في هذا الموقع</p>
+          </div>
+        </div>
+        {/* Networks */}
+        <div className="p-4 flex flex-col gap-2.5" dir="rtl">
+          {/* Safe network */}
+          <button onClick={() => onChoice("correct")}
+            className="flex items-center gap-3 px-4 py-3 bg-emerald-500/5 border border-emerald-500/20 hover:border-emerald-500/50 rounded-xl transition-colors group">
+            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+              <Wifi className="h-4 w-4 text-emerald-400"/>
+            </div>
+            <div className="flex-1 text-right">
+              <p className="text-sm font-bold text-foreground">Corporate_Secure</p>
+              <p className="text-xs text-emerald-400">🔒 محمية بكلمة مرور — WPA3</p>
+            </div>
+            <div className="flex flex-col items-end gap-0.5">
+              <div className="flex gap-0.5">{[1,2,3,4].map(b=><div key={b} className="w-1 bg-emerald-400 rounded-sm" style={{height:`${b*4}px`}}/>)}</div>
+              <span className="text-[9px] text-muted-foreground">قوية</span>
+            </div>
+          </button>
+
+          {/* Evil Twin */}
+          <button onClick={() => onChoice("wrong")}
+            className="flex items-center gap-3 px-4 py-3 bg-sky-500/5 border border-sky-500/20 hover:border-sky-500/50 rounded-xl transition-colors relative">
+            <div className="absolute top-2 left-3 text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full font-bold">جديدة</div>
+            <div className="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center shrink-0">
+              <Wifi className="h-4 w-4 text-sky-400"/>
+            </div>
+            <div className="flex-1 text-right">
+              <p className="text-sm font-bold text-foreground">Corporate_Free_Speed</p>
+              <p className="text-xs text-sky-300">🔓 مفتوحة بدون كلمة مرور — أسرع!</p>
+            </div>
+            <div className="flex flex-col items-end gap-0.5">
+              <div className="flex gap-0.5">{[1,2,3,4,5].map(b=><div key={b} className="w-1 bg-sky-400 rounded-sm" style={{height:`${b*4}px`}}/>)}</div>
+              <span className="text-[9px] text-muted-foreground">ممتازة</span>
+            </div>
+          </button>
+
+          {/* Other network */}
+          <div className="flex items-center gap-3 px-4 py-3 bg-muted/20 border border-border rounded-xl opacity-40 cursor-default">
+            <div className="w-9 h-9 rounded-lg bg-muted/40 flex items-center justify-center shrink-0">
+              <WifiOff className="h-4 w-4 text-muted-foreground"/>
+            </div>
+            <div className="flex-1 text-right">
+              <p className="text-sm text-muted-foreground">Visitor_Net</p>
+              <p className="text-xs text-muted-foreground">🔒 محمية</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-amber-500/8 border border-amber-500/20 rounded-xl mt-1" dir="rtl">
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0"/>
+            <p className="text-amber-300 text-xs">أي الشبكتين تختار؟</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SIMULATOR 8 — Cloud Spoofing (Google Drive notification)
+// ═══════════════════════════════════════════════════════════════════════════════
+function CloudSpoofSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+  return (
+    <div className="flex justify-center py-4">
+      <div className="w-full max-w-md" dir="rtl">
+        {/* Email-style container */}
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+          {/* Email header */}
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/40 border-b border-border">
+            <div className="flex gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-rose-500/60"/>
+              <span className="w-3 h-3 rounded-full bg-amber-500/60"/>
+              <span className="w-3 h-3 rounded-full bg-emerald-500/60"/>
+            </div>
+            <span className="flex-1 text-center text-xs text-muted-foreground font-mono">Gmail</span>
+          </div>
+          <div className="p-4">
+            {/* Subject */}
+            <p className="font-bold text-foreground text-sm mb-3">📎 تمت مشاركة ملف معك على Google Drive</p>
+            <div className="flex flex-col gap-1 text-xs text-muted-foreground mb-4">
+              <div className="flex gap-2"><span className="w-14 shrink-0 text-right">المُرسِل:</span><span className="font-mono bg-muted/50 px-1.5 py-0.5 rounded">drive-share@g00gle-docs.com</span></div>
+              <div className="flex gap-2"><span className="w-14 shrink-0 text-right">إلى:</span><span>أنت</span></div>
+            </div>
+
+            {/* Drive file card */}
+            <div className="border border-border rounded-xl overflow-hidden mb-4">
+              <div className="flex items-center gap-3 px-4 py-3 bg-muted/20">
+                <div className="w-10 h-10 rounded-lg bg-emerald-600/20 border border-emerald-600/30 flex items-center justify-center shrink-0">
+                  <FileText className="h-5 w-5 text-emerald-400"/>
+                </div>
+                <div className="flex-1 text-right">
+                  <p className="text-sm font-bold text-foreground">رواتب_2026.xlsx</p>
+                  <p className="text-xs text-muted-foreground">Google Sheets · شارك معك بواسطة: عبدالله.مدير@company.com</p>
+                </div>
+              </div>
+              <div className="px-4 py-2.5 bg-card border-t border-border">
+                <button onClick={() => onChoice("wrong")} className="w-full py-2 bg-[#1a73e8] hover:bg-[#1967d2] text-white font-bold rounded-lg text-sm transition-colors">
+                  فتح في Google Drive
+                </button>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              هذا الملف تمت مشاركته معك. انقر للعرض والتحرير.
+              <br/>
+              <span className="font-mono text-[10px]">drive.google.g00gle-docs.com/file/d/1xK9pL2...</span>
+            </p>
+          </div>
+          {/* Action bar */}
+          <div className="px-4 py-3 border-t border-border bg-muted/10 flex items-center gap-2">
+            <button onClick={() => onChoice("correct")} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-300 font-bold rounded-lg text-xs transition-colors">
+              <UserCheck className="h-3.5 w-3.5"/>
+              التأكد من المرسل داخلياً
+            </button>
+            <span className="text-[10px] text-muted-foreground">لاحظت شيئاً مريباً؟</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SIMULATOR 9 — LinkedIn Phishing
+// ═══════════════════════════════════════════════════════════════════════════════
+function LinkedinPhishSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+  return (
+    <div className="flex justify-center py-4">
+      <div className="w-full max-w-md" dir="rtl">
+        <div className="bg-[#1b1f23] border border-[#38434f] rounded-2xl overflow-hidden">
+          {/* LinkedIn header */}
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-[#283540] border-b border-[#38434f]">
+            <div className="w-6 h-6 rounded bg-[#0a66c2] flex items-center justify-center">
+              <Briefcase className="h-3.5 w-3.5 text-white"/>
+            </div>
+            <span className="text-white/70 text-xs font-bold">LinkedIn — رسائل مباشرة</span>
+          </div>
+
+          {/* Message thread */}
+          <div className="flex h-[320px]">
+            {/* Contacts sidebar */}
+            <div className="w-36 shrink-0 border-l border-[#38434f] bg-[#1b1f23] p-2 flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 px-2 py-1.5 bg-[#0a66c2]/20 rounded-lg">
+                <div className="w-6 h-6 rounded-full bg-[#0a66c2] flex items-center justify-center text-white text-[10px] font-bold">ك</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-[10px] font-bold truncate">كريم — Recruiter</p>
+                  <p className="text-white/40 text-[9px]">رسالة جديدة</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Chat */}
+            <div className="flex-1 flex flex-col">
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-[#38434f] bg-[#1e2730]">
+                <div className="w-7 h-7 rounded-full bg-[#0a66c2] flex items-center justify-center text-white font-bold text-sm">ك</div>
+                <div>
+                  <p className="text-white text-xs font-bold">كريم المنصوري</p>
+                  <p className="text-[#0a66c2] text-[10px]">Senior Talent Acquisition @ GlobalTech</p>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
+                {[
+                  "مرحباً! رأيت ملفك الشخصي وأنت مناسب تماماً لوظيفة مدير أمن المعلومات لدينا.",
+                  "الراتب: ٤٥,٠٠٠ ريال + حوافز + تأمين شامل. العمل عن بُعد بالكامل!",
+                  "حمّل العقد النموذجي من هذا الرابط وأرسله موقعاً: bit.ly/contract-CISO-2026",
+                ].map((msg, i) => (
+                  <div key={i} className="flex justify-end">
+                    <div className="max-w-[80%] bg-[#2d3b45] px-3 py-2 rounded-xl rounded-tl-sm">
+                      <p className="text-white text-[11px] leading-relaxed" dir="rtl">{msg}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Actions */}
+              <div className="p-2.5 border-t border-[#38434f] bg-[#1e2730] flex gap-2">
+                <button onClick={() => onChoice("wrong")} className="flex-1 py-1.5 bg-[#0a66c2] hover:bg-[#0855a5] text-white text-[10px] font-bold rounded-lg transition-colors">تحميل العقد</button>
+                <button onClick={() => onChoice("correct")} className="flex-1 py-1.5 bg-rose-500/80 hover:bg-rose-500 text-white text-[10px] font-bold rounded-lg transition-colors">تجاهل وإبلاغ 🚩</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SIMULATOR 10 — Tailgating (Smart Door Badge)
+// ═══════════════════════════════════════════════════════════════════════════════
+function TailgatingSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+  return (
+    <div className="flex justify-center py-4">
+      <div className="w-full max-w-md" dir="rtl">
+        {/* Smart badge panel */}
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+          {/* Panel header */}
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-slate-800 border-b border-border">
+            <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"/>
+            <p className="text-white text-sm font-bold">نظام التحكم في الدخول — الباب B-07</p>
+            <div className="mr-auto text-[10px] text-white/40 font-mono">ACCESS GRANTED</div>
+          </div>
+
+          {/* Scene illustration */}
+          <div className="p-5 flex flex-col gap-4">
+            {/* Status card */}
+            <div className="flex items-center gap-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                <UserCheck className="h-5 w-5 text-emerald-400"/>
+              </div>
+              <div>
+                <p className="text-emerald-300 text-xs font-bold">تم التحقق من هويتك</p>
+                <p className="text-muted-foreground text-[11px]">بطاقة موظف #2847 — مصرّح بالدخول</p>
+              </div>
+            </div>
+
+            {/* Situation */}
+            <div className="flex items-start gap-3 p-3 bg-amber-500/8 border border-amber-500/20 rounded-xl">
+              <DoorOpen className="h-5 w-5 text-amber-400 shrink-0 mt-0.5"/>
+              <div>
+                <p className="text-amber-300 text-xs font-bold mb-1">موقف يستوجب قراراً</p>
+                <p className="text-foreground/80 text-xs leading-relaxed">
+                  أنت تدخل من الباب الآمن للقسم التقني. خلفك مباشرةً شخص يحمل كوبَي قهوة ويقول لك:
+                </p>
+                <div className="mt-2 bg-card border border-border rounded-lg px-3 py-2">
+                  <p className="text-foreground text-xs italic">"أخي، يداي ممتلئتان! أبقِ الباب مفتوحاً لحظة، بطاقتي في جيبي"</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Info badge */}
+            <div className="flex items-center gap-1.5 px-3 py-2 bg-rose-500/8 border border-rose-500/20 rounded-xl">
+              <UserX className="h-3.5 w-3.5 text-rose-400 shrink-0"/>
+              <p className="text-rose-300 text-xs">الشخص لا يحمل بطاقة موظف مرئية</p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="px-4 pb-4 flex gap-2.5">
+            <button onClick={() => onChoice("wrong")} className="flex-1 py-2.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-300 font-semibold rounded-xl text-xs transition-colors">
+              إبقاء الباب مفتوحاً 🚪
+            </button>
+            <button onClick={() => onChoice("correct")} className="flex-1 py-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-300 font-bold rounded-xl text-xs transition-colors">
+              الاعتذار وطلب بطاقته 🛡️
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // DONE SCREEN
 // ═══════════════════════════════════════════════════════════════════════════════
 function DoneScreen({ score, history, onRestart }: { score: number; history: boolean[]; onRestart: () => void }) {
@@ -462,8 +825,6 @@ function DoneScreen({ score, history, onRestart }: { score: number; history: boo
     score >= 70 ? { label: "مستوى متقدم — ممتاز",  color: "text-sky-400",     ring: "border-sky-500/40     bg-sky-500/10"     } :
     score >= 50 ? { label: "مستوى جيد — واصل التعلم", color: "text-amber-400",  ring: "border-amber-500/40  bg-amber-500/10"  } :
                   { label: "تحتاج مزيداً من التدريب", color: "text-rose-400",   ring: "border-rose-500/40   bg-rose-500/10"   };
-
-  const attacks = ["Phishing", "Smishing", "Vishing", "Baiting", "Scareware"];
 
   return (
     <div className="flex flex-col items-center gap-5 py-8 text-center" dir="rtl">
@@ -585,11 +946,16 @@ export default function SocialEngineeringLab() {
         )}
 
         {/* Render active simulator */}
-        {scenario.type === "email"     && <EmailSim    onChoice={handleChoice}/>}
-        {scenario.type === "sms"       && <SmsSim      onChoice={handleChoice}/>}
-        {scenario.type === "vishing"   && <VishingSim  onChoice={handleChoice}/>}
-        {scenario.type === "baiting"   && <BaitingSim  onChoice={handleChoice}/>}
-        {scenario.type === "scareware" && <ScarewareSim onChoice={handleChoice}/>}
+        {scenario.type === "email"         && <EmailSim         onChoice={handleChoice}/>}
+        {scenario.type === "sms"           && <SmsSim           onChoice={handleChoice}/>}
+        {scenario.type === "vishing"       && <VishingSim        onChoice={handleChoice}/>}
+        {scenario.type === "baiting"       && <BaitingSim        onChoice={handleChoice}/>}
+        {scenario.type === "scareware"     && <ScarewareSim      onChoice={handleChoice}/>}
+        {scenario.type === "ceofraud"      && <CeoFraudSim       onChoice={handleChoice}/>}
+        {scenario.type === "eviltwin"      && <EvilTwinSim       onChoice={handleChoice}/>}
+        {scenario.type === "cloudspoofing" && <CloudSpoofSim     onChoice={handleChoice}/>}
+        {scenario.type === "linkedinphish" && <LinkedinPhishSim  onChoice={handleChoice}/>}
+        {scenario.type === "tailgating"    && <TailgatingSim     onChoice={handleChoice}/>}
       </div>
     </div>
   );
