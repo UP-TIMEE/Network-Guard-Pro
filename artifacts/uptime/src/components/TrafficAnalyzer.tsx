@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Shield, AlertTriangle, CheckCircle2,
-  RotateCcw, ChevronLeft, Terminal,
+  RotateCcw, ChevronLeft, Terminal, Lightbulb, X,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -23,6 +23,7 @@ interface LogEntry extends LogTemplate {
 
 interface RoundDef {
   titleAr: string;
+  roundHintAr: string;
   normals: LogTemplate[];
   malicious: LogTemplate;
   successAr: string;
@@ -32,6 +33,7 @@ interface RoundDef {
 const ROUNDS: RoundDef[] = [
   {
     titleAr: "الجولة الأولى — هجوم القوة الغاشمة على SSH",
+    roundHintAr: "ابحث عن محاولات اتصال متكررة من نفس المصدر الخارجي على منفذ الإدارة (22). عدد المحاولات والسرعة الغير طبيعية هي مؤشر الخطر.",
     successAr:
       "أحسنت! رصدت هجوم Brute Force — ثلاث محاولات دخول فاشلة من نفس الـ IP الخارجي (203.0.113.77) على منفذ SSH خلال أقل من ثانية واحدة. تم حظر المصدر وتفعيل الـ Firewall.",
     malicious: {
@@ -52,6 +54,7 @@ const ROUNDS: RoundDef[] = [
   },
   {
     titleAr: "الجولة الثانية — كلمة مرور بنص واضح عبر FTP",
+    roundHintAr: "ابحث عن سطر يحتوي بيانات اعتماد (كلمة مرور) بنص واضح غير مشفر. البروتوكولات غير المشفرة تُظهر محتوى الحزمة كاملاً.",
     successAr:
       "أحسنت! رصدت إرسال كلمة مرور بنص واضح (Cleartext) عبر FTP على المنفذ 21. بروتوكول FTP لا يشفّر البيانات، ما يتيح لأي مهاجم على الشبكة قراءة بيانات الاعتماد. استخدم SFTP أو FTPS بدلاً من ذلك.",
     malicious: {
@@ -72,6 +75,7 @@ const ROUNDS: RoundDef[] = [
   },
   {
     titleAr: "الجولة الثالثة — مسح المنافذ من IP خارجي",
+    roundHintAr: "ابحث عن سطر يطرق عدة منافذ مختلفة في نفس الوقت من مصدر خارجي واحد. الاتصال العادي يستهدف منفذاً واحداً محدداً فقط.",
     successAr:
       "رائع! رصدت هجوم Port Scan — طلبات SYN متسلسلة على 6 منافذ مختلفة (22، 23، 25، 80، 443، 3389) من IP خارجي خلال أقل من ثانية. هذا نشاط استطلاع يسبق محاولة الاختراق.",
     malicious: {
@@ -94,6 +98,7 @@ const ROUNDS: RoundDef[] = [
   // ══ ROUND 4 — SQL Injection ══
   {
     titleAr: "الجولة الرابعة — حقن قواعد البيانات (SQL Injection)",
+    roundHintAr: "ابحث عن طلب HTTP يحتوي في رابطه على رموز برمجية غريبة أو علامات خاصة غير مألوفة. طلبات الصفحات العادية تبدو بسيطة وقصيرة.",
     successAr:
       "ممتاز! رصدت هجوم SQL Injection — المهاجم أدرج أمراً برمجياً خبيثاً في رابط المتصفح (admin' OR '1'='1' --) محاولاً تجاوز حماية تسجيل الدخول. هذا النوع من الهجمات يستهدف قواعد البيانات مباشرةً عبر حقول الإدخال غير المحمية.",
     malicious: {
@@ -116,6 +121,7 @@ const ROUNDS: RoundDef[] = [
   // ══ ROUND 5 — C2 Callback ══
   {
     titleAr: "الجولة الخامسة — اتصال مشبوه بجهاز تحكم عن بعد (C2)",
+    roundHintAr: "ابحث عن اتصال صادر من داخل الشبكة بكمية بيانات كبيرة غير معتادة نحو IP خارجي غير معروف على منفذ غير قياسي.",
     successAr:
       "أحسنت! رصدت اتصال C2 Callback — جهاز داخلي يُرسل 4.8 MB إلى IP خارجي مجهول (45.142.212.100) على المنفذ 4444 غير المعروف. هذا النمط يشير إلى إصابة ببرمجية خبيثة تتواصل مع خادم الهكر لتلقي الأوامر أو تسريب البيانات.",
     malicious: {
@@ -211,9 +217,12 @@ export default function TrafficAnalyzer() {
   const [roundIdx,  setRoundIdx]  = useState(0);
   const [correct,   setCorrect]   = useState(0);
   const [logs,      setLogs]      = useState<LogEntry[]>([]);
-  const [verdict,   setVerdict]   = useState<"idle" | "correct" | "wrong">("idle");
+  const [verdict,   setVerdict]   = useState<"idle" | "correct">("idle");
   const [selected,  setSelected]  = useState<number | null>(null);
-  const [hint,      setHint]      = useState("");
+  const [wrongMsg,  setWrongMsg]  = useState<string | null>(null);
+  const [wrongId,   setWrongId]   = useState<number | null>(null);
+  const [showHint,  setShowHint]  = useState(false);
+  const wrongTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const total = ROUNDS.length;
   const round = ROUNDS[roundIdx];
@@ -222,7 +231,10 @@ export default function TrafficAnalyzer() {
     setLogs(buildLogs(ROUNDS[idx]));
     setVerdict("idle");
     setSelected(null);
-    setHint("");
+    setWrongMsg(null);
+    setWrongId(null);
+    setShowHint(false);
+    if (wrongTimer.current) clearTimeout(wrongTimer.current);
   }
 
   function startGame() {
@@ -233,15 +245,24 @@ export default function TrafficAnalyzer() {
 
   function handleRowClick(log: LogEntry) {
     if (verdict !== "idle") return;
-    setSelected(log.id);
     if (log.isMalicious) {
+      setSelected(log.id);
       setVerdict("correct");
       setCorrect(c => c + 1);
     } else {
-      setVerdict("wrong");
-      setHint(log.hintAr);
+      // Flash wrong row briefly, then clear — no score penalty
+      setWrongId(log.id);
+      setWrongMsg(log.hintAr || "هذا اتصال طبيعي — واصل التحليل وحاول مرة أخرى.");
+      if (wrongTimer.current) clearTimeout(wrongTimer.current);
+      wrongTimer.current = setTimeout(() => {
+        setWrongId(null);
+        setWrongMsg(null);
+      }, 2800);
     }
   }
+
+  // Clean up timer on unmount
+  useEffect(() => () => { if (wrongTimer.current) clearTimeout(wrongTimer.current); }, []);
 
   function nextRound() {
     const next = roundIdx + 1;
@@ -264,11 +285,11 @@ export default function TrafficAnalyzer() {
       </div>
       <div className="w-full max-w-md grid gap-2 text-start">
         {[
-          "🔴  الجولة ١ — هجوم Brute Force على SSH",
-          "🟠  الجولة ٢ — كلمة مرور Cleartext عبر FTP",
-          "🔵  الجولة ٣ — مسح المنافذ (Port Scan)",
-          "🟣  الجولة ٤ — حقن قواعد البيانات (SQL Injection)",
-          "⚫  الجولة ٥ — اتصال مشبوه بجهاز تحكم (C2 Callback)",
+          "🟢  الجولة ١ — سجلات بروتوكولات متعددة: SSH، DNS، HTTPS",
+          "🟢  الجولة ٢ — اتصالات داخلية وخارجية متنوعة: FTP، HTTPS",
+          "🟢  الجولة ٣ — حركة شبكة مختلطة: TCP، DNS، HTTPS",
+          "🟢  الجولة ٤ — طلبات HTTP وDNS وHTTPS",
+          "🟢  الجولة ٥ — اتصالات نظام: NTP، HTTPS، TCP",
         ].map((item, i) => (
           <div key={i} className="px-4 py-2.5 bg-card border border-border rounded-xl text-sm font-medium text-foreground">{item}</div>
         ))}
@@ -320,14 +341,54 @@ export default function TrafficAnalyzer() {
 
       {/* Arabic header — RTL */}
       <div className="flex items-center justify-between gap-3 flex-wrap" dir="rtl">
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="text-[11px] text-muted-foreground font-mono uppercase tracking-widest mb-0.5">
             الجولة {roundIdx + 1} من {total}
           </p>
-          <h3 className="font-black text-foreground text-base">{round.titleAr}</h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-black text-foreground text-base leading-snug">
+              حلل حركة الشبكة واكتشف السطر المشبوه
+            </h3>
+            <button
+              onClick={() => setShowHint(h => !h)}
+              className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-semibold transition-colors ${
+                showHint
+                  ? "bg-amber-500/15 border-amber-500/40 text-amber-300"
+                  : "bg-muted/50 border-border text-muted-foreground hover:text-foreground hover:border-amber-500/40"
+              }`}
+            >
+              <Lightbulb className="h-3.5 w-3.5" />
+              {showHint ? "إخفاء التلميح" : "💡 تلميح"}
+            </button>
+          </div>
         </div>
         <RoundDots total={total} done={roundIdx} correct={correct} />
       </div>
+
+      {/* Hint panel */}
+      {showHint && (
+        <div className="flex items-start gap-2.5 px-4 py-3 bg-amber-500/8 border border-amber-500/25 rounded-xl" dir="rtl">
+          <Lightbulb className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-200/80 leading-relaxed flex-1">{round.roundHintAr}</p>
+          <button onClick={() => setShowHint(false)} className="text-amber-400/50 hover:text-amber-400 transition-colors shrink-0">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Wrong-click toast (auto-dismisses) */}
+      {wrongMsg && (
+        <div className="flex items-start gap-2.5 px-4 py-3 bg-rose-500/10 border border-rose-500/30 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200" dir="rtl">
+          <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-rose-300 mb-0.5">خطأ، هذا اتصال طبيعي — واصل التحليل وحاول مرة أخرى!</p>
+            <p className="text-xs text-rose-200/65 leading-relaxed">{wrongMsg}</p>
+          </div>
+          <button onClick={() => { setWrongMsg(null); setWrongId(null); }} className="text-rose-400/50 hover:text-rose-400 transition-colors shrink-0">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* ── Terminal — hard LTR, table-based ── */}
       {/* Outer wrapper: clips the border-radius; inner wrapper scrolls on mobile */}
@@ -365,21 +426,22 @@ export default function TrafficAnalyzer() {
 
             {/* Body */}
             <tbody className="divide-y divide-slate-800/50">
-              {logs.map((log, idx) => {
+              {logs.map((log, rowI) => {
                 const sel        = selected === log.id;
-                const isRevealed = log.isMalicious && verdict !== "idle";
+                const isWrong    = wrongId === log.id;
+                const isRevealed = log.isMalicious && verdict === "correct";
 
                 const rowCls =
                   sel && verdict === "correct" ? "bg-emerald-500/10 border-l-2 border-l-emerald-400" :
-                  sel && verdict === "wrong"   ? "bg-rose-500/10    border-l-2 border-l-rose-400"    :
+                  isWrong                      ? "bg-rose-500/10    border-l-2 border-l-rose-400"    :
                   isRevealed                   ? "bg-emerald-500/5"  :
-                  idx % 2 === 0               ? "bg-[#0f0f1e]"      :
+                  rowI % 2 === 0              ? "bg-[#0f0f1e]"      :
                                                 "bg-[#0d0d1a]";
 
                 const infoCls =
-                  isRevealed                 ? "text-emerald-300 font-semibold" :
-                  sel && verdict === "wrong" ? "text-rose-300"                  :
-                                              "text-slate-200";
+                  isRevealed ? "text-emerald-300 font-semibold" :
+                  isWrong    ? "text-rose-300"                  :
+                               "text-slate-200";
 
                 return (
                   <tr
@@ -406,10 +468,10 @@ export default function TrafficAnalyzer() {
       </div>
 
       {/* ── Instruction — RTL ── */}
-      {verdict === "idle" && (
+      {verdict === "idle" && !wrongMsg && (
         <p className="flex items-center gap-2 text-sm text-muted-foreground" dir="rtl">
           <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
-          انقر على السطر الذي يمثّل هجوماً شبكياً.
+          انقر على السطر الذي يمثّل هجوماً شبكياً — يمكنك المحاولة مراراً دون خصم نقاط.
         </p>
       )}
 
@@ -429,26 +491,6 @@ export default function TrafficAnalyzer() {
           >
             <ChevronLeft className="h-4 w-4" />
             {roundIdx + 1 >= total ? "عرض النتيجة" : "الجولة التالية"}
-          </button>
-        </div>
-      )}
-
-      {/* ── Wrong — RTL ── */}
-      {verdict === "wrong" && (
-        <div className="rounded-xl border border-rose-500/25 bg-rose-500/10 p-4 flex flex-col gap-3" dir="rtl">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-rose-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-rose-300 text-sm mb-1">✗ خطأ، هذا اتصال طبيعي — حاول مجدداً</p>
-              <p className="text-rose-200/75 text-sm leading-relaxed">{hint}</p>
-            </div>
-          </div>
-          <button
-            onClick={() => { setVerdict("idle"); setSelected(null); setHint(""); }}
-            className="self-start flex items-center gap-2 px-5 py-2 bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 font-bold rounded-lg border border-rose-500/25 text-sm transition-colors"
-          >
-            <RotateCcw className="h-4 w-4" />
-            حاول مجدداً
           </button>
         </div>
       )}
