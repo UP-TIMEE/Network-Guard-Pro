@@ -501,14 +501,14 @@ function SignalBars({ bars, color = "bg-blue-500" }: { bars: number; color?: str
 }
 
 function NetRow({
-  icon, iconBg, name, badge, sub, bars, barColor, onClick, disabled = false
+  icon, iconBg, name, badge, sub, subNode, bars, barColor, onClick, disabled = false
 }: {
   icon: React.ReactNode; iconBg: string; name: string; badge?: React.ReactNode;
-  sub: string; bars: number; barColor?: string; onClick?: () => void; disabled?: boolean;
+  sub: string; subNode?: React.ReactNode; bars: number; barColor?: string; onClick?: () => void; disabled?: boolean;
 }) {
   const inner = (
     <div className={`flex flex-row justify-between items-center p-3.5 rounded-xl border transition-all ${disabled ? "opacity-40 border-border bg-muted/10 cursor-default" : "border-border bg-muted/10 cursor-pointer"}`}>
-      {/* Signal bars — left side (visually leftmost in LTR render, rightmost in RTL view) */}
+      {/* Signal bars — left side */}
       <div className="flex flex-col items-center gap-0.5 shrink-0 w-10">
         <div className="flex items-end gap-[3px]">
           {[4,8,12,16,20].map((h,i) => (
@@ -524,7 +524,7 @@ function NetRow({
             {badge}
             <span className="text-sm font-bold text-foreground">{name}</span>
           </div>
-          <span className="text-xs text-muted-foreground">{sub}</span>
+          {subNode ? <div className="flex items-center gap-1">{subNode}</div> : <span className="text-xs text-muted-foreground">{sub}</span>}
         </div>
         <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>
           {icon}
@@ -557,20 +557,21 @@ function EvilTwinSim({ onHotspot }: { onHotspot: (pts: Pts, fb: string) => void 
             icon={<Wifi className="h-5 w-5 text-blue-400"/>}
             iconBg="bg-blue-500/15"
             name="Corporate_Secure"
-            sub="🔒 محمية بكلمة مرور — WPA3"
+            sub=""
+            subNode={<><Lock className="h-3 w-3 text-blue-500"/><span className="text-xs text-muted-foreground">محمية بكلمة مرور — WPA3</span></>}
             bars={4}
             barColor="bg-blue-500"
           />
           {/* 2. Evil Twin — 0 pts */}
           <NetRow
             onClick={() => onHotspot(0, "اتصلت بشبكة المهاجم! هو الآن يراقب كل بياناتك بأسلوب Man-in-the-Middle ويعترض كلمات مرورك وجلساتك المصرفية. الشبكات المفتوحة خطر دائم.")}
-            icon={<Wifi className="h-5 w-5 text-foreground/60"/>}
-            iconBg="bg-muted/40"
+            icon={<Wifi className="h-5 w-5 text-blue-400"/>}
+            iconBg="bg-blue-500/15"
             name="Corporate_Free_Speed"
             badge={<span className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold leading-none">جديدة</span>}
             sub="🔓 مفتوحة بدون كلمة مرور — أسرع!"
             bars={5}
-            barColor="bg-foreground/40"
+            barColor="bg-blue-500"
           />
           {/* 3. iPhone Hotspot — 10 pts */}
           <NetRow
