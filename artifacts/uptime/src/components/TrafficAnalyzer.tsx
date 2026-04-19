@@ -208,24 +208,32 @@ function RoundDots({ total, done, correct }: { total: number; done: number; corr
   );
 }
 
+// ─── Scoring constants ────────────────────────────────────────────────────────
+const ROUND_MAX  = 20;   // max points per round
+const PENALTY_PT = 5;    // deducted per wrong click
+
 // ─── Main component ───────────────────────────────────────────────────────────────
 export default function TrafficAnalyzer() {
   const { language } = useLanguage();
   const isRtl = language === "ar";
 
-  const [phase,     setPhase]     = useState<"intro" | "playing" | "done">("intro");
-  const [roundIdx,  setRoundIdx]  = useState(0);
-  const [correct,   setCorrect]   = useState(0);
-  const [logs,      setLogs]      = useState<LogEntry[]>([]);
-  const [verdict,   setVerdict]   = useState<"idle" | "correct">("idle");
-  const [selected,  setSelected]  = useState<number | null>(null);
-  const [wrongMsg,  setWrongMsg]  = useState<string | null>(null);
-  const [wrongId,   setWrongId]   = useState<number | null>(null);
-  const [showHint,  setShowHint]  = useState(false);
+  const [phase,        setPhase]        = useState<"intro" | "playing" | "done">("intro");
+  const [roundIdx,     setRoundIdx]     = useState(0);
+  const [logs,         setLogs]         = useState<LogEntry[]>([]);
+  const [verdict,      setVerdict]      = useState<"idle" | "correct">("idle");
+  const [selected,     setSelected]     = useState<number | null>(null);
+  const [wrongMsg,     setWrongMsg]     = useState<string | null>(null);
+  const [wrongId,      setWrongId]      = useState<number | null>(null);
+  const [showHint,     setShowHint]     = useState(false);
+  // Scoring
+  const [totalScore,   setTotalScore]   = useState(0);
+  const [roundPenalty, setRoundPenalty] = useState(0);   // wrong-click count this round
+  const [roundHistory, setRoundHistory] = useState<number[]>([]); // earned pts per completed round
   const wrongTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const total = ROUNDS.length;
-  const round = ROUNDS[roundIdx];
+  const total       = ROUNDS.length;
+  const round       = ROUNDS[roundIdx];
+  const roundAvail  = Math.max(0, ROUND_MAX - roundPenalty * PENALTY_PT); // pts still earnable
 
   function launchRound(idx: number) {
     setLogs(buildLogs(ROUNDS[idx]));
@@ -234,11 +242,15 @@ export default function TrafficAnalyzer() {
     setWrongMsg(null);
     setWrongId(null);
     setShowHint(false);
+    setRoundPenalty(0);
     if (wrongTimer.current) clearTimeout(wrongTimer.current);
   }
 
   function startGame() {
-    setRoundIdx(0); setCorrect(0);
+    setRoundIdx(0);
+    setTotalScore(0);
+    setRoundPenalty(0);
+    setRoundHistory([]);
     launchRound(0);
     setPhase("playing");
   }
@@ -246,11 +258,15 @@ export default function TrafficAnalyzer() {
   function handleRowClick(log: LogEntry) {
     if (verdict !== "idle") return;
     if (log.isMalicious) {
+      // ── Correct ──
+      const earned = Math.max(0, ROUND_MAX - roundPenalty * PENALTY_PT);
       setSelected(log.id);
       setVerdict("correct");
-      setCorrect(c => c + 1);
+      setTotalScore(s => s + earned);
+      setRoundHistory(h => [...h, earned]);
     } else {
-      // Flash wrong row briefly, then clear — no score penalty
+      // ── Wrong: apply penalty, show toast, stay in round ──
+      setRoundPenalty(p => p + 1);
       setWrongId(log.id);
       setWrongMsg(log.hintAr || "هذا اتصال طبيعي — واصل التحليل وحاول مرة أخرى.");
       if (wrongTimer.current) clearTimeout(wrongTimer.current);
@@ -307,23 +323,67 @@ export default function TrafficAnalyzer() {
 
   // ── DONE ──────────────────────────────────────────────────────────────────────
   if (phase === "done") {
-    const pct   = Math.round((correct / total) * 100);
-    const grade = pct === 100 ? "محلل شبكات محترف" : pct >= 67 ? "محلل واعد" : "تحتاج مزيداً من التدريب";
+    const maxTotal   = total * ROUND_MAX;                  // 100
+    const perfectRds = roundHistory.filter(s => s === ROUND_MAX).length;
+    const grade =
+      totalScore >= 90 ? "محلل شبكات محترف — أداء استثنائي! 🏆" :
+      totalScore >= 70 ? "محلل متقدم — مستوى ممتاز" :
+      totalScore >= 50 ? "محلل واعد — أداء جيد" :
+                         "تحتاج مزيداً من التركيز والتدريب";
+    const gradeColor =
+      totalScore >= 90 ? "text-emerald-400" :
+      totalScore >= 70 ? "text-sky-400"     :
+      totalScore >= 50 ? "text-amber-400"   :
+                         "text-rose-400";
+    const iconColor =
+      totalScore >= 90 ? "bg-emerald-500/10 border-emerald-500/30" :
+      totalScore >= 70 ? "bg-sky-500/10     border-sky-500/30"     :
+      totalScore >= 50 ? "bg-amber-500/10   border-amber-500/30"   :
+                         "bg-rose-500/10    border-rose-500/30";
+    const shieldColor =
+      totalScore >= 90 ? "text-emerald-400" :
+      totalScore >= 70 ? "text-sky-400"     :
+      totalScore >= 50 ? "text-amber-400"   :
+                         "text-rose-400";
+
     return (
       <div className="flex flex-col items-center gap-6 py-10 text-center" dir="rtl">
-        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center border-2 ${
-          pct === 100 ? "bg-emerald-500/10 border-emerald-500/30" :
-          pct >= 67   ? "bg-amber-500/10   border-amber-500/30"   :
-                        "bg-rose-500/10    border-rose-500/30"}`}>
-          <Shield className={`h-10 w-10 ${pct === 100 ? "text-emerald-400" : pct >= 67 ? "text-amber-400" : "text-rose-400"}`} />
+        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center border-2 ${iconColor}`}>
+          <Shield className={`h-10 w-10 ${shieldColor}`} />
         </div>
         <div>
           <p className="text-muted-foreground text-sm mb-1">نتيجتك النهائية</p>
-          <p className="text-5xl font-black text-foreground">{pct}<span className="text-2xl text-muted-foreground">%</span></p>
-          <p className="text-lg font-semibold mt-1">{grade}</p>
-          <p className="text-muted-foreground text-sm mt-1">{correct} من {total} جولات صحيحة</p>
+          <p className="text-5xl font-black text-foreground">
+            {totalScore}
+            <span className="text-2xl text-muted-foreground">/{maxTotal}</span>
+          </p>
+          <p className={`text-base font-bold mt-2 ${gradeColor}`}>{grade}</p>
+          <p className="text-muted-foreground text-sm mt-1">{perfectRds} جولة كاملة بدون أخطاء من {total}</p>
         </div>
-        <RoundDots total={total} done={total} correct={correct} />
+
+        {/* Per-round breakdown */}
+        <div className="w-full max-w-xs flex flex-col gap-1.5" dir="rtl">
+          {roundHistory.map((pts, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground w-16 shrink-0">الجولة {i + 1}</span>
+              <div className="flex-1 h-2 bg-muted/40 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${pts === ROUND_MAX ? "bg-emerald-500" : pts > 0 ? "bg-amber-500" : "bg-rose-500"}`}
+                  style={{ width: `${(pts / ROUND_MAX) * 100}%` }}
+                />
+              </div>
+              <span className={`text-xs font-mono font-bold w-10 text-right ${pts === ROUND_MAX ? "text-emerald-400" : pts > 0 ? "text-amber-400" : "text-rose-400"}`}>
+                {pts}/{ROUND_MAX}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <RoundDots
+          total={total}
+          done={total}
+          correct={roundHistory.filter(s => s === ROUND_MAX).length}
+        />
         <button
           onClick={() => setPhase("intro")}
           className="flex items-center gap-2 px-6 py-2.5 bg-card border border-border rounded-xl font-semibold hover:border-foreground/30 transition-colors text-sm"
@@ -362,7 +422,24 @@ export default function TrafficAnalyzer() {
             </button>
           </div>
         </div>
-        <RoundDots total={total} done={roundIdx} correct={correct} />
+        {/* Score + dots */}
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-muted-foreground font-mono">نقاط الجولة:</span>
+            <span className={`text-sm font-black font-mono tabular-nums ${
+              roundAvail === ROUND_MAX ? "text-emerald-400" :
+              roundAvail > 0           ? "text-amber-400"   :
+                                         "text-rose-400"
+            }`}>
+              {roundAvail}/{ROUND_MAX}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-muted-foreground font-mono">الإجمالي:</span>
+            <span className="text-sm font-black font-mono text-foreground tabular-nums">{totalScore}</span>
+          </div>
+          <RoundDots total={total} done={roundIdx} correct={roundHistory.filter(s => s === ROUND_MAX).length} />
+        </div>
       </div>
 
       {/* Hint panel */}
@@ -378,10 +455,12 @@ export default function TrafficAnalyzer() {
 
       {/* Wrong-click toast (auto-dismisses) */}
       {wrongMsg && (
-        <div className="flex items-start gap-2.5 px-4 py-3 bg-rose-500/10 border border-rose-500/30 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200" dir="rtl">
+        <div className="flex items-start gap-2.5 px-4 py-3 bg-rose-500/10 border border-rose-500/30 rounded-xl" dir="rtl">
           <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-rose-300 mb-0.5">خطأ، هذا اتصال طبيعي — واصل التحليل وحاول مرة أخرى!</p>
+            <p className="text-sm font-semibold text-rose-300 mb-0.5">
+              خطأ — اتصال طبيعي! خُصم {PENALTY_PT} نقاط. نقاط الجولة المتبقية: {roundAvail}/{ROUND_MAX}
+            </p>
             <p className="text-xs text-rose-200/65 leading-relaxed">{wrongMsg}</p>
           </div>
           <button onClick={() => { setWrongMsg(null); setWrongId(null); }} className="text-rose-400/50 hover:text-rose-400 transition-colors shrink-0">
@@ -471,29 +550,43 @@ export default function TrafficAnalyzer() {
       {verdict === "idle" && !wrongMsg && (
         <p className="flex items-center gap-2 text-sm text-muted-foreground" dir="rtl">
           <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
-          انقر على السطر الذي يمثّل هجوماً شبكياً — يمكنك المحاولة مراراً دون خصم نقاط.
+          انقر على السطر الذي يمثّل هجوماً شبكياً — كل نقرة خاطئة تُخصم {PENALTY_PT} نقاط من رصيد الجولة.
         </p>
       )}
 
       {/* ── Correct — RTL ── */}
-      {verdict === "correct" && (
-        <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4 flex flex-col gap-3" dir="rtl">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-emerald-300 text-sm mb-1">✓ تم رصد الهجوم — Firewall مُفعَّل</p>
-              <p className="text-emerald-200/75 text-sm leading-relaxed">{round.successAr}</p>
+      {verdict === "correct" && (() => {
+        const earned = roundHistory[roundHistory.length - 1] ?? 0;
+        return (
+          <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4 flex flex-col gap-3" dir="rtl">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <p className="font-bold text-emerald-300 text-sm">✓ تم رصد الهجوم — Firewall مُفعَّل</p>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-black border ${
+                    earned === ROUND_MAX
+                      ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
+                      : earned > 0
+                      ? "bg-amber-500/15  border-amber-500/40  text-amber-300"
+                      : "bg-rose-500/15   border-rose-500/40   text-rose-300"
+                  }`}>
+                    +{earned}/{ROUND_MAX} نقطة
+                  </span>
+                </div>
+                <p className="text-emerald-200/75 text-sm leading-relaxed">{round.successAr}</p>
+              </div>
             </div>
+            <button
+              onClick={nextRound}
+              className="self-start flex items-center gap-2 px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-lg text-sm transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              {roundIdx + 1 >= total ? `عرض النتيجة — مجموعك: ${totalScore}` : "الجولة التالية"}
+            </button>
           </div>
-          <button
-            onClick={nextRound}
-            className="self-start flex items-center gap-2 px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-lg text-sm transition-colors"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            {roundIdx + 1 >= total ? "عرض النتيجة" : "الجولة التالية"}
-          </button>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
