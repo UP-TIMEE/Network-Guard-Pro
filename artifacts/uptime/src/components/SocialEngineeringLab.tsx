@@ -3,147 +3,149 @@ import {
   Mail, MessageSquare, Smartphone, Flag, ShieldAlert, CheckCircle2,
   Inbox, Star, Trash2, Send, AlertTriangle, Lock, Phone, PhoneOff,
   Monitor, Usb, Globe, X, ChevronRight, RotateCcw,
-  Battery, Signal, Wifi, WifiOff, Cloud, Briefcase, DoorOpen,
-  Gift, UserCheck, FileText, ShieldCheck, UserX
+  Battery, Signal, Wifi, WifiOff, Briefcase, DoorOpen,
+  UserCheck, FileText, ShieldCheck, UserX
 } from "lucide-react";
 
 // ─── Scenario data ─────────────────────────────────────────────────────────────
-interface Scenario {
-  id:          number;
-  type:        "email" | "sms" | "vishing" | "baiting" | "scareware" | "ceofraud" | "eviltwin" | "cloudspoofing" | "linkedinphish" | "tailgating";
-  attackName:  string;
-  correctBtn:  string;   // green choice label
-  wrongBtn:    string;   // red choice label
-  correctExp:  string;   // shown in modal when correct
-  wrongExp:    string;   // shown in modal when wrong
+interface Option {
+  text:     string;
+  points:   0 | 5 | 10 | 20;
+  feedback: string;
 }
+interface Scenario {
+  id:         number;
+  type:       "email" | "sms" | "vishing" | "baiting" | "scareware" | "ceofraud" | "eviltwin" | "cloudspoofing" | "linkedinphish" | "tailgating";
+  attackName: string;
+  options:    Option[];
+}
+
+const MAX_PTS_PER_ROUND = 20;
 
 const SCENARIOS: Scenario[] = [
   {
-    id: 1,
-    type: "email",
-    attackName: "التصيد الإلكتروني (Phishing)",
-    correctBtn: "تجاهل وإبلاغ 🚩",
-    wrongBtn:   "الضغط على الرابط",
-    correctExp: "قرار ممتاز! لاحظت الخدعة البصرية — البريد hr@uptirne.com يستخدم حرفَي (rn) ليشبه حرف (m) في كلمة uptime. هذا ما يُسمى Homoglyph Attack.",
-    wrongExp:   "وقعت في الفخ! البريد hr@uptirne.com مزيف — (rn) وليس (m). دائماً تحقق من كل حرف في نطاق المُرسِل قبل النقر على أي رابط.",
+    id: 1, type: "email", attackName: "التصيد الإلكتروني (Phishing)",
+    options: [
+      { text: "الضغط على الرابط وتحديث البيانات",     points: 0,  feedback: "خطأ فادح! لقد تم اختراقك. البريد hr@uptirne.com يستخدم (rn) ليشبه (m) في كلمة uptime — هجوم Homoglyph كلاسيكي." },
+      { text: "الرد على الإيميل للاستفسار",            points: 5,  feedback: "قرار خطير! الرد يؤكد للمهاجم أن بريدك الإلكتروني نشط ويفتح باب تواصل مع المحتال." },
+      { text: "تجاهل الإيميل وحذفه",                  points: 10, feedback: "قرار آمن لنفسك، لكنك لم تحمِ زملاءك من نفس الهجوم. الإبلاغ خطوة أكثر أهمية." },
+      { text: "الإبلاغ عنه كبريد تصيد (Report Phishing)", points: 20, feedback: "مثالي! أنت تحمي نفسك وشبكة الشركة بأكملها. فريق الأمن يتمكن من حظر المهاجم فوراً." },
+    ],
   },
   {
-    id: 2,
-    type: "sms",
-    attackName: "التصيد النصي (Smishing)",
-    correctBtn: "حظر الرقم 🚫",
-    wrongBtn:   "دفع الرسوم",
-    correctExp: "صحيح! شركات الشحن الرسمية لا تطلب دفعات عبر روابط SMS. الرابط المنتهي بـ .tk وعدم حفظ الرقم علامات كافية للتنبّه.",
-    wrongExp:   "هذا موقع تصيد! بمجرد إدخال بياناتك البنكية لدفع الـ 15 ريال سُرقت جميع معلوماتك المالية.",
+    id: 2, type: "sms", attackName: "التصيد النصي (Smishing)",
+    options: [
+      { text: "الضغط على الرابط ودفع الرسوم",         points: 0,  feedback: "تم سرقة بياناتك البنكية! المواقع المنتهية بـ .tk وطلبات الدفع العاجلة عبر SMS علامات تصيد واضحة." },
+      { text: "إعادة توجيه الرسالة لصديق للتحقق",     points: 5,  feedback: "قرار خطير! أنت تنشر الهجوم وتُعرّض صديقك للخطر أيضاً. التحقق يكون دائماً من المصدر الرسمي مباشرة." },
+      { text: "تجاهل الرسالة وحذفها",                  points: 10, feedback: "أنت بأمان، لكن المرسل لا يزال يستهدف أشخاصاً آخرين. الإبلاغ يوقف الحملة." },
+      { text: "حظر الرقم والإبلاغ عنه كاحتيال",       points: 20, feedback: "ممتاز! أسهمت في وقف هذه الحملة وحماية الآخرين من نفس الرقم." },
+    ],
   },
   {
-    id: 3,
-    type: "vishing",
-    attackName: "التصيد الصوتي (Vishing)",
-    correctBtn: "إنهاء المكالمة فوراً",
-    wrongBtn:   "إعطاء الباسوورد",
-    correctExp: "تصرف احترافي! لا توجد جهة دعم تقني شرعية تطلب كلمة المرور عبر الهاتف أبداً. إنهاء المكالمة والإبلاغ هو الإجراء الصحيح.",
-    wrongExp:   "المهاجم حصل على كلمة مرورك! كان يُقنعك بالتحدث بسرعة لتقليل تفكيرك. الدعم التقني الحقيقي لا يطلب كلمات المرور أبداً.",
+    id: 3, type: "vishing", attackName: "التصيد الصوتي (Vishing)",
+    options: [
+      { text: "إعطاء كلمة المرور هاتفياً للتحقق",    points: 0,  feedback: "كارثي! المهاجم حصل على كلمة مرورك. الدعم التقني الشرعي لا يطلب كلمات المرور عبر الهاتف أبداً تحت أي ظرف." },
+      { text: "تغيير كلمة المرور مباشرة بعد المكالمة", points: 5,  feedback: "غير كافٍ! المهاجم استخدم كلمة مرورك أثناء المكالمة. يجب رفض الطلب من البداية." },
+      { text: "إنهاء المكالمة دون إعطاء أي بيانات",   points: 10, feedback: "أنت بأمان، لكن المهاجم لا يزال يتصل بآخرين. الإبلاغ لفريق الأمن يوقفه." },
+      { text: "إنهاء المكالمة والإبلاغ لفريق الأمن",  points: 20, feedback: "مثالي! أنت حميت نفسك وفضحت المهاجم. فريق الأمن يتمكن من تحليل المكالمة وتحذير الموظفين الآخرين." },
+    ],
   },
   {
-    id: 4,
-    type: "baiting",
-    attackName: "الطعم (Baiting)",
-    correctBtn: "فصل USB وتسليمه للأمن",
-    wrongBtn:   "فتح الملفات لمعرفة صاحبه",
-    correctExp: "قرار حكيم! وصلات USB المجهولة قد تحتوي على برمجيات خبيثة تُشغَّل تلقائياً بمجرد التوصيل. فريق الأمن هو المختص بالتعامل معها.",
-    wrongExp:   "فتحت الملفات وأصبح جهازك مصاباً! هذا ما يُسمى بالـ Baiting. المهاجمون يتركون USB مُبرمجة في أماكن عامة عمداً لإغراء الضحايا.",
+    id: 4, type: "baiting", attackName: "الطعم (Baiting)",
+    options: [
+      { text: "توصيل USB وفتح الملفات لمعرفة صاحبه",  points: 0,  feedback: "اختراق فوري! USB المفخخة تُشغّل كودها الخبيث تلقائياً عند التوصيل قبل أن تفتح أي ملف." },
+      { text: "توصيل USB على جهازي الشخصي فقط",        points: 5,  feedback: "جهازك الشخصي الآن مصاب أيضاً! المهاجمون يستهدفون الأجهزة الشخصية لأنها أقل حماية من أجهزة العمل." },
+      { text: "ترك USB مكانه وعدم لمسه",               points: 10, feedback: "أنت بأمان، لكن USB لا تزال خطراً على زميل آخر قد يجدها. التسليم لفريق الأمن ضروري." },
+      { text: "تسليم USB لفريق الأمن فوراً دون لمسها", points: 20, feedback: "صحيح تماماً! فريق الأمن يتعامل معها في بيئة معزولة ويحلل محتواها ويحذر الموظفين." },
+    ],
   },
   {
-    id: 5,
-    type: "scareware",
-    attackName: "برمجيات التخويف (Scareware)",
-    correctBtn: "إغلاق النافذة فوراً",
-    wrongBtn:   "الضغط للفحص",
-    correctExp: "ممتاز! النوافذ المنبثقة التي تدّعي اكتشاف فيروسات هي نفسها البرمجية الخبيثة. أغلق المتصفح كاملاً إن لزم الأمر.",
-    wrongExp:   "الضغط على 'فحص' حمّل برنامجاً خبيثاً! هذه النوافذ مصممة لإثارة الذعر لدفعك للتصرف دون تفكير. المتصفح الحقيقي لا يُظهر تنبيهات بهذا الشكل.",
+    id: 5, type: "scareware", attackName: "برمجيات التخويف (Scareware)",
+    options: [
+      { text: "الضغط على 'فحص الآن' لإزالة الفيروس",  points: 0,  feedback: "حمّلت برنامجاً خبيثاً! هذه النوافذ هي نفسها البرمجية الضارة. الضغط هو ما يُثبّتها على جهازك." },
+      { text: "إعادة تشغيل الكمبيوتر",                points: 5,  feedback: "النافذة ستعود عند إعادة التشغيل إذا كانت بالفعل بدأت التثبيت. إغلاق المتصفح أولاً هو الخطوة الصحيحة." },
+      { text: "إغلاق المتصفح بالكامل",                 points: 10, feedback: "آمن في الغالب، لكن لم تتحقق من سلامة الجهاز. إبلاغ فريق الأمن يضمن عدم وجود أضرار خفية." },
+      { text: "إغلاق المتصفح وإبلاغ فريق الأمن فوراً", points: 20, feedback: "مثالي! الفريق يتحقق من سلامة الجهاز ويُضيف الموقع الخبيث لقائمة الحظر لحماية الجميع." },
+    ],
   },
   {
-    id: 6,
-    type: "ceofraud",
-    attackName: "احتيال الرؤساء (CEO Fraud)",
-    correctBtn: "الاتصال بالمدير للتأكد",
-    wrongBtn:   "شراء البطاقات وإرسالها",
-    correctExp: "قرار سليم! الاتصال الصوتي المباشر بالمدير هو الإجراء الوحيد الصحيح عند الطلبات المالية عبر الرسائل. المحتال يعتمد على الإلحاح والثقة لمنعك من التحقق.",
-    wrongExp:   "لقد وقعت في الفخ! المخترقون يفضلون طلب بطاقات الهدايا لأن الأموال تصبح غير قابلة للتتبع أو الاسترجاع بمجرد إرسال الكود، عكس الحوالات البنكية. لا تنفذ طلبات مالية غير معتادة عبر الرسائل النصية دون تحقق صوتي.",
+    id: 6, type: "ceofraud", attackName: "احتيال الرؤساء (CEO Fraud)",
+    options: [
+      { text: "شراء البطاقات وإرسال الأكواد فوراً",    points: 0,  feedback: "وقعت في الفخ! المخترقون يفضلون بطاقات الهدايا لأن أموالها غير قابلة للتتبع أو الاسترجاع بمجرد إرسال الكود." },
+      { text: "إرسال رسالة عبر نفس الواتساب للتأكد",  points: 5,  feedback: "خطأ! أنت تتحقق من المحتال نفسه. التحقق يجب أن يكون عبر قناة اتصال مختلفة تماماً." },
+      { text: "رفض الطلب وعدم الرد",                   points: 10, feedback: "أنت لم تخسر مالاً، لكن إبلاغ فريق الأمن يحمي زملاءك الآخرين الذين قد تصلهم نفس الرسالة." },
+      { text: "الاتصال بالمدير هاتفياً وإبلاغ فريق الأمن", points: 20, feedback: "مثالي! التحقق الصوتي يكشف الاحتيال فوراً، وإبلاغ الأمن يحمي الشركة بأكملها من هذا المهاجم." },
+    ],
   },
   {
-    id: 7,
-    type: "eviltwin",
-    attackName: "الواي فاي الوهمي (Evil Twin)",
-    correctBtn: "الاتصال بالشبكة الآمنة",
-    wrongBtn:   "الاتصال بالشبكة السريعة",
-    correctExp: "تصرف ذكي! الشبكة المفتوحة بدون كلمة مرور في بيئة الشركة علامة خطر واضحة. المهاجم يُحاكي اسم الشبكة الرسمية لاعتراض بياناتك.",
-    wrongExp:   "اتصلت بشبكة Evil Twin! المهاجم الآن يراقب كل اتصالاتك ويعترض بياناتك بأسلوب Man-in-the-Middle. الشبكات المفتوحة في الشركات تستوجب الريبة دائماً.",
+    id: 7, type: "eviltwin", attackName: "الواي فاي الوهمي (Evil Twin)",
+    options: [
+      { text: "الاتصال بالشبكة السريعة المفتوحة",      points: 0,  feedback: "اتصلت بشبكة المهاجم! هو الآن يراقب كل بياناتك بأسلوب Man-in-the-Middle ويعترض كلمات مرورك." },
+      { text: "الاتصال بالشبكة المفتوحة مع VPN",       points: 5,  feedback: "أفضل من لا شيء، لكن VPN لا تحميك من جميع هجمات Evil Twin. تجنب الشبكات المفتوحة في بيئات العمل." },
+      { text: "رفض الاتصال بأي شبكة مشبوهة",          points: 10, feedback: "أنت بأمان، لكن الإبلاغ عن الشبكة الوهمية لفريق الأمن يحمي زملاءك الآخرين في المبنى." },
+      { text: "رفض الشبكة المفتوحة والإبلاغ عنها",    points: 20, feedback: "ممتاز! فريق الأمن يتمكن من تحديد الجهاز المزيف وإزالته من المبنى قبل أن يستهدف موظفين آخرين." },
+    ],
   },
   {
-    id: 8,
-    type: "cloudspoofing",
-    attackName: "التصيد السحابي (Cloud Spoofing)",
-    correctBtn: "التأكد من المرسل داخلياً",
-    wrongBtn:   "الضغط لتسجيل الدخول",
-    correctExp: "احتراس ممتاز! إشعارات المشاركة المزيفة تُحاكي Google Drive أو OneDrive بدقة. التحقق من المرسل عبر قناة رسمية يكشف الاحتيال فوراً.",
-    wrongExp:   "سُرقت بيانات حسابك! صفحة تسجيل الدخول كانت مزيفة. هذا النوع من الهجمات يستهدف الموظفين الذين يتلقون ملفات كثيرة ويضغطون دون تمحيص.",
+    id: 8, type: "cloudspoofing", attackName: "التصيد السحابي (Cloud Spoofing)",
+    options: [
+      { text: "الضغط على 'فتح في Drive' وتسجيل الدخول", points: 0,  feedback: "سُرقت بيانات حسابك! صفحة تسجيل الدخول كانت مزيفة. لاحظ النطاق: g00gle-docs.com وليس google.com." },
+      { text: "تنزيل الملف مباشرة دون تسجيل الدخول",  points: 5,  feedback: "خطر! الملف نفسه قد يحتوي على كود خبيث. لا تفتح ملفات من مصادر غير موثوقة حتى دون تسجيل الدخول." },
+      { text: "تجاهل الإيميل وحذفه",                  points: 10, feedback: "أنت بأمان، لكن إبلاغ فريق الأمن يمنع وصول نفس الرسالة لزملائك في الشركة." },
+      { text: "التحقق من المرسل داخلياً وإبلاغ الأمن", points: 20, feedback: "مثالي! فريق الأمن يحلل الإيميل ويحظر النطاق المزيف ويحذر جميع الموظفين من هذه الحملة." },
+    ],
   },
   {
-    id: 9,
-    type: "linkedinphish",
-    attackName: "تصيد التوظيف (LinkedIn Phishing)",
-    correctBtn: "تجاهل وإبلاغ",
-    wrongBtn:   "الضغط لتحميل العقد",
-    correctExp: "قرار صحيح! الروابط المختصرة مثل bit.ly تُخفي الوجهة الحقيقية. المسمى الوظيفي الرائع والراتب الخيالي أدوات إغراء كلاسيكية في هجمات التوظيف المزيف.",
-    wrongExp:   "حمّلت ملفاً ضاراً! الرابط المختصر أعاد توجيهك لموقع مزيف نزّل برنامج تجسس. عروض العمل المبالغ فيها عبر رسائل مباشرة تستوجب التحقق المزدوج دائماً.",
+    id: 9, type: "linkedinphish", attackName: "تصيد التوظيف (LinkedIn Phishing)",
+    options: [
+      { text: "الضغط على الرابط وتحميل العقد",         points: 0,  feedback: "حمّلت ملفاً ضاراً! الرابط المختصر bit.ly أعاد توجيهك لموقع مزيف نزّل برنامج تجسس على جهازك." },
+      { text: "إرسال سيرتك الذاتية على الرابط",        points: 5,  feedback: "شاركت بياناتك الشخصية مع مجهول! المهاجمون يستخدمون بيانات السيرة الذاتية في هجمات تصيد أكثر استهدافاً." },
+      { text: "تجاهل الرسالة وحذفها",                  points: 10, feedback: "أنت بأمان، لكن الحساب المزيف لا يزال يستهدف محترفين آخرين. الإبلاغ يوقف الهجوم." },
+      { text: "تجاهل الرسالة والإبلاغ عن الحساب",     points: 20, feedback: "ممتاز! LinkedIn يتمكن من تعليق الحساب المزيف وإيقاف الهجوم قبل استهداف محترفين آخرين." },
+    ],
   },
   {
-    id: 10,
-    type: "tailgating",
-    attackName: "الاختراق الفيزيائي (Tailgating)",
-    correctBtn: "الاعتذار والطلب منه استخدام بطاقته",
-    wrongBtn:   "إبقاء الباب مفتوحاً مساعدةً",
-    correctExp: "تصرف احترافي! كل شخص يدخل منطقة آمنة يجب أن يُثبت هويته ببطاقته الخاصة. المساعدة الاجتماعية شعور طبيعي، لكن المهاجمين يستغلون اللطف الإنساني تحديداً.",
-    wrongExp:   "سمحت لشخص غير مصرح له بالدخول! Tailgating هو استغلال اللطف الاجتماعي لاختراق المناطق المحظورة. يمكن لهذا الشخص سرقة معدات أو وثائق سرية.",
+    id: 10, type: "tailgating", attackName: "الاختراق الفيزيائي (Tailgating)",
+    options: [
+      { text: "إبقاء الباب مفتوحاً مساعدةً له",        points: 0,  feedback: "سمحت لشخص غير مصرح له بالدخول! يمكنه الآن سرقة معدات أو الوصول لأجهزة داخل القسم الآمن." },
+      { text: "انتظاره ليدخل خلفك بدون بطاقة",         points: 5,  feedback: "لا تزال تسمح بتجاوز بروتوكول الأمن. كل شخص يدخل المنطقة الآمنة يجب أن يُثبت هويته ببطاقته." },
+      { text: "الاعتذار بلطف وإغلاق الباب",            points: 10, feedback: "أنت اتخذت القرار الصحيح، لكن إبلاغ الأمن عن هذا الشخص يمنع محاولته مجدداً مع موظف آخر." },
+      { text: "الاعتذار وطلب بطاقته وإبلاغ الأمن",    points: 20, feedback: "البروتوكول الأمني الكامل! أنت حميت المنطقة الآمنة وأعطيت فريق الأمن فرصة التحقق من هوية هذا الشخص." },
+    ],
   },
 ];
 
-const TOTAL_PTS = 10; // per round (10 × 10 = 100 total)
-
 // ─── Result modal ──────────────────────────────────────────────────────────────
 interface ModalProps {
-  correct:    boolean;
+  points:     number;
   attackName: string;
-  explanation:string;
+  feedback:   string;
   isLast:     boolean;
   onNext:     () => void;
 }
-function ResultModal({ correct, attackName, explanation, isLast, onNext }: ModalProps) {
+function ResultModal({ points, attackName, feedback, isLast, onNext }: ModalProps) {
+  const tier =
+    points === 20 ? { label: `+20 نقطة — مثالي!`,     color: "text-emerald-400", ring: "bg-emerald-500/15 border-emerald-500/30", icon: <CheckCircle2 className="h-5 w-5 text-emerald-400"/> } :
+    points === 10 ? { label: `+10 نقاط — آمن`,         color: "text-sky-400",     ring: "bg-sky-500/15     border-sky-500/30",     icon: <ShieldCheck  className="h-5 w-5 text-sky-400"/>     } :
+    points === 5  ? { label: `+5 نقاط — محفوف بخطر`,  color: "text-amber-400",   ring: "bg-amber-500/15   border-amber-500/30",   icon: <AlertTriangle className="h-5 w-5 text-amber-400"/>  } :
+                    { label: `+0 نقطة — خطأ فادح`,     color: "text-rose-400",    ring: "bg-rose-500/15    border-rose-500/30",    icon: <ShieldAlert  className="h-5 w-5 text-rose-400"/>    };
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-xl p-4">
       <div className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl p-5 flex flex-col gap-4" dir="rtl">
         {/* Icon + status */}
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${correct ? "bg-emerald-500/15 border border-emerald-500/30" : "bg-rose-500/15 border border-rose-500/30"}`}>
-            {correct
-              ? <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-              : <ShieldAlert  className="h-5 w-5 text-rose-400" />
-            }
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${tier.ring}`}>
+            {tier.icon}
           </div>
           <div>
-            <p className={`font-black text-sm ${correct ? "text-emerald-400" : "text-rose-400"}`}>
-              {correct ? `إجابة صحيحة! +${TOTAL_PTS} نقطة` : "إجابة خاطئة — 0 نقطة"}
-            </p>
+            <p className={`font-black text-sm ${tier.color}`}>{tier.label}</p>
             <p className="text-[11px] text-muted-foreground">{attackName}</p>
           </div>
         </div>
 
-        {/* Explanation */}
+        {/* Feedback */}
         <p className="text-sm text-foreground/80 leading-relaxed border-t border-border pt-3">
-          {explanation}
+          {feedback}
         </p>
 
         {/* Next button */}
@@ -185,7 +187,7 @@ function ProgressBar({ current, total, score }: { current: number; total: number
 // ═══════════════════════════════════════════════════════════════════════════════
 // SIMULATOR 1 — Phishing Email
 // ═══════════════════════════════════════════════════════════════════════════════
-function EmailSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+function EmailSim() {
   return (
     <div className="rounded-xl border border-border overflow-hidden bg-card" dir="rtl">
       <div className="flex items-center gap-2 px-4 py-2 bg-muted/60 border-b border-border">
@@ -235,16 +237,14 @@ function EmailSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
             <p>عزيزي الموظف،</p>
             <p>بسبب الترقية لنظام الرواتب الجديد، <strong className="text-amber-300">يجب تحديث بياناتك البنكية فوراً</strong> لضمان استلام راتب أبريل في موعده.</p>
             <p className="text-rose-300/60 text-xs">المهلة: ٢٤ ساعة</p>
-            <button onClick={() => onChoice("wrong")} className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg text-xs transition-colors">
+            <div className="flex items-center gap-2 px-4 py-2 bg-sky-600/80 text-white font-bold rounded-lg text-xs cursor-default select-none w-fit">
               <Lock className="h-3.5 w-3.5"/> تحديث البيانات الآن
-            </button>
-            <p className="text-[11px] text-muted-foreground">الرابط: <span className="font-mono text-blue-500 hover:underline cursor-pointer" onClick={() => onChoice("wrong")}>http://portal.uptirne.com/payroll-update</span></p>
+            </div>
+            <p className="text-[11px] text-muted-foreground">الرابط: <span className="font-mono text-blue-500">http://portal.uptirne.com/payroll-update</span></p>
           </div>
           <div className="p-2.5 border-t border-border bg-muted/20 flex items-center gap-2">
-            <button onClick={() => onChoice("correct")} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 border border-rose-500/40 hover:bg-rose-500/20 text-rose-300 font-bold rounded-lg text-xs transition-colors">
-              <Flag className="h-3.5 w-3.5"/> تجاهل وإبلاغ 🚩
-            </button>
-            <span className="text-[10px] text-muted-foreground">أي إجراء تتخذ؟</span>
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0"/>
+            <span className="text-[10px] text-amber-300">اختر من الخيارات أدناه</span>
           </div>
         </div>
       </div>
@@ -255,7 +255,7 @@ function EmailSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // SIMULATOR 2 — Smishing (SMS)
 // ═══════════════════════════════════════════════════════════════════════════════
-function SmsSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+function SmsSim() {
   const now = new Date().toLocaleTimeString("ar-SA", {hour:"2-digit", minute:"2-digit"});
   return (
     <div className="flex justify-center py-2">
@@ -285,9 +285,9 @@ function SmsSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
             <p className="text-amber-300 text-[10px]">رقم غير محفوظ · رابط مشبوه</p>
           </div>
         </div>
-        <div className="bg-[#1c1c1e] border-t border-white/10 p-2.5 flex gap-2">
-          <button onClick={() => onChoice("wrong")} className="flex-1 py-1.5 bg-blue-500/80 hover:bg-blue-500 text-white text-[11px] font-bold rounded-xl transition-colors">دفع الرسوم</button>
-          <button onClick={() => onChoice("correct")} className="flex-1 py-1.5 bg-rose-500/80 hover:bg-rose-500 text-white text-[11px] font-bold rounded-xl transition-colors">حظر الرقم 🚫</button>
+        <div className="bg-[#1c1c1e] border-t border-white/10 px-3 py-2 flex items-center gap-1.5">
+          <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0"/>
+          <span className="text-amber-300 text-[10px]">اختر من الخيارات أدناه</span>
         </div>
         <div className="bg-[#111] flex justify-center py-1.5"><div className="w-16 h-1 rounded-full bg-white/20"/></div>
       </div>
@@ -298,7 +298,7 @@ function SmsSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // SIMULATOR 3 — Vishing (Incoming Call)
 // ═══════════════════════════════════════════════════════════════════════════════
-function VishingSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+function VishingSim() {
   const [pulse, setPulse] = useState(true);
   useEffect(() => {
     const t = setInterval(() => setPulse(p => !p), 1000);
@@ -341,20 +341,10 @@ function VishingSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) 
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="bg-[#1c1c1e] border-t border-white/10 p-3 flex justify-around">
-          <button onClick={() => onChoice("wrong")} className="flex flex-col items-center gap-1">
-            <div className="w-12 h-12 rounded-full bg-green-500 hover:bg-green-400 flex items-center justify-center transition-colors">
-              <Phone className="h-5 w-5 text-white"/>
-            </div>
-            <span className="text-white/60 text-[9px]">إعطاء الباسوورد</span>
-          </button>
-          <button onClick={() => onChoice("correct")} className="flex flex-col items-center gap-1">
-            <div className="w-12 h-12 rounded-full bg-rose-500 hover:bg-rose-400 flex items-center justify-center transition-colors">
-              <PhoneOff className="h-5 w-5 text-white"/>
-            </div>
-            <span className="text-white/60 text-[9px]">إنهاء المكالمة</span>
-          </button>
+        {/* Indicator */}
+        <div className="bg-[#1c1c1e] border-t border-white/10 px-3 py-2 flex items-center gap-1.5">
+          <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0"/>
+          <span className="text-amber-300 text-[10px]">اختر من الخيارات أدناه</span>
         </div>
         <div className="bg-[#111] flex justify-center py-1.5"><div className="w-16 h-1 rounded-full bg-white/20"/></div>
       </div>
@@ -365,7 +355,7 @@ function VishingSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SIMULATOR 4 — Baiting (USB)
 // ═══════════════════════════════════════════════════════════════════════════════
-function BaitingSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+function BaitingSim() {
   return (
     <div className="flex justify-center py-4">
       {/* Desktop screen frame */}
@@ -403,9 +393,9 @@ function BaitingSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) 
                   <p className="text-white/60 text-[11px] leading-relaxed">تم اكتشاف جهاز تخزين غير معروف. يحتوي على <strong className="text-amber-300">١٢ ملفاً</strong> بما فيها "كلمات_مرور_2024.xlsx"</p>
                 </div>
               </div>
-              <div className="flex gap-2 pt-1">
-                <button onClick={() => onChoice("wrong")} className="flex-1 py-1.5 bg-blue-600/80 hover:bg-blue-600 text-white text-[11px] font-semibold rounded-lg transition-colors">فتح الملفات</button>
-                <button onClick={() => onChoice("correct")} className="flex-1 py-1.5 bg-rose-600/80 hover:bg-rose-600 text-white text-[11px] font-semibold rounded-lg transition-colors">تجاهل وتسليم للأمن</button>
+              <div className="flex items-center gap-1.5 pt-1">
+                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0"/>
+                <span className="text-amber-300 text-[10px]">اختر من الخيارات أدناه</span>
               </div>
             </div>
           </div>
@@ -431,7 +421,7 @@ function BaitingSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SIMULATOR 5 — Scareware (Browser Popup)
 // ═══════════════════════════════════════════════════════════════════════════════
-function ScarewareSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+function ScarewareSim() {
   return (
     <div className="flex justify-center py-4">
       <div className="w-full max-w-lg">
@@ -465,7 +455,7 @@ function ScarewareSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }
               <div className="bg-rose-600 px-4 py-2 flex items-center gap-2">
                 <ShieldAlert className="h-4 w-4 text-white"/>
                 <span className="text-white text-xs font-black flex-1">⚠ تحذير أمني حرج</span>
-                <X className="h-3.5 w-3.5 text-white/60 cursor-pointer" onClick={() => onChoice("correct")}/>
+                <X className="h-3.5 w-3.5 text-white/60 cursor-default"/>
               </div>
               {/* Popup content */}
               <div className="px-4 py-4 text-center space-y-3">
@@ -476,13 +466,12 @@ function ScarewareSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }
                   <p className="text-white font-black text-base">جهازك مصاب بـ 3 فيروسات!</p>
                   <p className="text-rose-300 text-xs mt-1">تم اكتشاف برامج تجسس خطيرة. قد تتأثر بياناتك الشخصية.</p>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <button onClick={() => onChoice("wrong")} className="w-full py-2.5 bg-rose-500 hover:bg-rose-400 text-white font-black rounded-xl text-sm transition-colors animate-pulse">
-                    فحص وإزالة الفيروسات الآن!
-                  </button>
-                  <button onClick={() => onChoice("correct")} className="w-full py-2 text-white/40 text-xs hover:text-white/70 transition-colors">
-                    إغلاق النافذة فوراً
-                  </button>
+                <div className="w-full py-2.5 bg-rose-500/80 text-white font-black rounded-xl text-sm animate-pulse cursor-default select-none">
+                  فحص وإزالة الفيروسات الآن!
+                </div>
+                <div className="flex items-center justify-center gap-1.5">
+                  <AlertTriangle className="h-3 w-3 text-amber-400"/>
+                  <span className="text-amber-300 text-[10px]">اختر من الخيارات أدناه</span>
                 </div>
               </div>
             </div>
@@ -501,7 +490,7 @@ function ScarewareSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }
 // ═══════════════════════════════════════════════════════════════════════════════
 // SIMULATOR 6 — CEO Fraud (WhatsApp-style)
 // ═══════════════════════════════════════════════════════════════════════════════
-function CeoFraudSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+function CeoFraudSim() {
   const now = new Date().toLocaleTimeString("ar-SA", {hour:"2-digit", minute:"2-digit"});
   return (
     <div className="flex justify-center py-2">
@@ -540,10 +529,10 @@ function CeoFraudSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void })
             <p className="text-amber-300 text-[10px]">طلب مالي عبر رسائل — لا ترسل أكواداً قبل التحقق الصوتي!</p>
           </div>
         </div>
-        {/* Actions */}
-        <div className="bg-[#1c1c1e] border-t border-white/10 p-2.5 flex gap-2">
-          <button onClick={() => onChoice("wrong")} className="flex-1 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white text-[10px] font-bold rounded-xl transition-colors">شراء البطاقات</button>
-          <button onClick={() => onChoice("correct")} className="flex-1 py-2 bg-rose-500/80 hover:bg-rose-500 text-white text-[10px] font-bold rounded-xl transition-colors">الاتصال للتأكد 📞</button>
+        {/* Indicator */}
+        <div className="bg-[#1c1c1e] border-t border-white/10 px-3 py-2 flex items-center gap-1.5">
+          <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0"/>
+          <span className="text-amber-300 text-[10px]">اختر من الخيارات أدناه</span>
         </div>
         <div className="bg-[#111] flex justify-center py-1.5"><div className="w-16 h-1 rounded-full bg-white/20"/></div>
       </div>
@@ -554,7 +543,7 @@ function CeoFraudSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void })
 // ═══════════════════════════════════════════════════════════════════════════════
 // SIMULATOR 7 — Evil Twin WiFi
 // ═══════════════════════════════════════════════════════════════════════════════
-function EvilTwinSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+function EvilTwinSim() {
   return (
     <div className="flex justify-center py-4">
       <div className="w-full max-w-md bg-card border border-border rounded-2xl overflow-hidden">
@@ -569,8 +558,7 @@ function EvilTwinSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void })
         {/* Networks */}
         <div className="p-4 flex flex-col gap-2.5" dir="rtl">
           {/* Safe network */}
-          <button onClick={() => onChoice("correct")}
-            className="flex items-center gap-3 px-4 py-3 bg-emerald-500/5 border border-emerald-500/20 hover:border-emerald-500/50 rounded-xl transition-colors group">
+          <div className="flex items-center gap-3 px-4 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl cursor-default">
             <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
               <Wifi className="h-4 w-4 text-emerald-400"/>
             </div>
@@ -582,11 +570,10 @@ function EvilTwinSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void })
               <div className="flex gap-0.5">{[1,2,3,4].map(b=><div key={b} className="w-1 bg-emerald-400 rounded-sm" style={{height:`${b*4}px`}}/>)}</div>
               <span className="text-[9px] text-muted-foreground">قوية</span>
             </div>
-          </button>
+          </div>
 
           {/* Evil Twin */}
-          <button onClick={() => onChoice("wrong")}
-            className="flex items-center gap-3 px-4 py-3 bg-sky-500/5 border border-sky-500/20 hover:border-sky-500/50 rounded-xl transition-colors relative">
+          <div className="flex items-center gap-3 px-4 py-3 bg-sky-500/5 border border-sky-500/20 rounded-xl relative cursor-default">
             <div className="absolute top-2 left-3 text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full font-bold">جديدة</div>
             <div className="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center shrink-0">
               <Wifi className="h-4 w-4 text-sky-400"/>
@@ -599,7 +586,7 @@ function EvilTwinSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void })
               <div className="flex gap-0.5">{[1,2,3,4,5].map(b=><div key={b} className="w-1 bg-sky-400 rounded-sm" style={{height:`${b*4}px`}}/>)}</div>
               <span className="text-[9px] text-muted-foreground">ممتازة</span>
             </div>
-          </button>
+          </div>
 
           {/* Other network */}
           <div className="flex items-center gap-3 px-4 py-3 bg-muted/20 border border-border rounded-xl opacity-40 cursor-default">
@@ -625,7 +612,7 @@ function EvilTwinSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void })
 // ═══════════════════════════════════════════════════════════════════════════════
 // SIMULATOR 8 — Cloud Spoofing (Google Drive notification)
 // ═══════════════════════════════════════════════════════════════════════════════
-function CloudSpoofSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+function CloudSpoofSim() {
   return (
     <div className="flex justify-center py-4">
       <div className="w-full max-w-md" dir="rtl">
@@ -660,9 +647,9 @@ function CloudSpoofSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void 
                 </div>
               </div>
               <div className="px-4 py-2.5 bg-card border-t border-border">
-                <button onClick={() => onChoice("wrong")} className="w-full py-2 bg-[#1a73e8] hover:bg-[#1967d2] text-white font-bold rounded-lg text-sm transition-colors">
+                <div className="w-full py-2 bg-[#1a73e8]/80 text-white font-bold rounded-lg text-sm text-center cursor-default select-none">
                   فتح في Google Drive
-                </button>
+                </div>
               </div>
             </div>
 
@@ -672,13 +659,10 @@ function CloudSpoofSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void 
               <span className="font-mono text-[10px]">drive.google.g00gle-docs.com/file/d/1xK9pL2...</span>
             </p>
           </div>
-          {/* Action bar */}
-          <div className="px-4 py-3 border-t border-border bg-muted/10 flex items-center gap-2">
-            <button onClick={() => onChoice("correct")} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-300 font-bold rounded-lg text-xs transition-colors">
-              <UserCheck className="h-3.5 w-3.5"/>
-              التأكد من المرسل داخلياً
-            </button>
-            <span className="text-[10px] text-muted-foreground">لاحظت شيئاً مريباً؟</span>
+          {/* Indicator bar */}
+          <div className="px-4 py-3 border-t border-border bg-muted/10 flex items-center gap-1.5">
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0"/>
+            <span className="text-amber-300 text-xs">اختر من الخيارات أدناه</span>
           </div>
         </div>
       </div>
@@ -689,7 +673,7 @@ function CloudSpoofSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SIMULATOR 9 — LinkedIn Phishing
 // ═══════════════════════════════════════════════════════════════════════════════
-function LinkedinPhishSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+function LinkedinPhishSim() {
   return (
     <div className="flex justify-center py-4">
       <div className="w-full max-w-md" dir="rtl">
@@ -737,10 +721,10 @@ function LinkedinPhishSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => vo
                   </div>
                 ))}
               </div>
-              {/* Actions */}
-              <div className="p-2.5 border-t border-[#38434f] bg-[#1e2730] flex gap-2">
-                <button onClick={() => onChoice("wrong")} className="flex-1 py-1.5 bg-[#0a66c2] hover:bg-[#0855a5] text-white text-[10px] font-bold rounded-lg transition-colors">تحميل العقد</button>
-                <button onClick={() => onChoice("correct")} className="flex-1 py-1.5 bg-rose-500/80 hover:bg-rose-500 text-white text-[10px] font-bold rounded-lg transition-colors">تجاهل وإبلاغ 🚩</button>
+              {/* Indicator */}
+              <div className="p-2.5 border-t border-[#38434f] bg-[#1e2730] flex items-center gap-1.5">
+                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0"/>
+                <span className="text-amber-300 text-[10px]">اختر من الخيارات أدناه</span>
               </div>
             </div>
           </div>
@@ -753,7 +737,7 @@ function LinkedinPhishSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => vo
 // ═══════════════════════════════════════════════════════════════════════════════
 // SIMULATOR 10 — Tailgating (Smart Door Badge)
 // ═══════════════════════════════════════════════════════════════════════════════
-function TailgatingSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void }) {
+function TailgatingSim() {
   return (
     <div className="flex justify-center py-4">
       <div className="w-full max-w-md" dir="rtl">
@@ -800,14 +784,10 @@ function TailgatingSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void 
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="px-4 pb-4 flex gap-2.5">
-            <button onClick={() => onChoice("wrong")} className="flex-1 py-2.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-300 font-semibold rounded-xl text-xs transition-colors">
-              إبقاء الباب مفتوحاً 🚪
-            </button>
-            <button onClick={() => onChoice("correct")} className="flex-1 py-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-300 font-bold rounded-xl text-xs transition-colors">
-              الاعتذار وطلب بطاقته 🛡️
-            </button>
+          {/* Indicator */}
+          <div className="px-4 pb-4 flex items-center gap-1.5">
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0"/>
+            <span className="text-amber-300 text-xs">اختر من الخيارات أدناه</span>
           </div>
         </div>
       </div>
@@ -818,18 +798,27 @@ function TailgatingSim({ onChoice }: { onChoice: (c: "correct"|"wrong") => void 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DONE SCREEN
 // ═══════════════════════════════════════════════════════════════════════════════
-function DoneScreen({ score, history, onRestart }: { score: number; history: boolean[]; onRestart: () => void }) {
-  const maxScore = SCENARIOS.length * TOTAL_PTS;
+function DoneScreen({ score, history, onRestart }: { score: number; history: number[]; onRestart: () => void }) {
+  const maxScore = SCENARIOS.length * MAX_PTS_PER_ROUND;
+  const pct = (score / maxScore) * 100;
   const grade =
-    score >= 90 ? { label: "محلل أمني محترف 🏆",  color: "text-emerald-400", ring: "border-emerald-500/40 bg-emerald-500/10" } :
-    score >= 70 ? { label: "مستوى متقدم — ممتاز",  color: "text-sky-400",     ring: "border-sky-500/40     bg-sky-500/10"     } :
-    score >= 50 ? { label: "مستوى جيد — واصل التعلم", color: "text-amber-400",  ring: "border-amber-500/40  bg-amber-500/10"  } :
-                  { label: "تحتاج مزيداً من التدريب", color: "text-rose-400",   ring: "border-rose-500/40   bg-rose-500/10"   };
+    pct >= 90 ? { label: "محلل أمني محترف 🏆",       color: "text-emerald-400", ring: "border-emerald-500/40 bg-emerald-500/10" } :
+    pct >= 70 ? { label: "مستوى متقدم — ممتاز",       color: "text-sky-400",     ring: "border-sky-500/40     bg-sky-500/10"     } :
+    pct >= 50 ? { label: "مستوى جيد — واصل التعلم",  color: "text-amber-400",   ring: "border-amber-500/40  bg-amber-500/10"   } :
+                { label: "تحتاج مزيداً من التدريب",  color: "text-rose-400",    ring: "border-rose-500/40   bg-rose-500/10"    };
+
+  const ptColor = (pts: number) =>
+    pts === 20 ? "text-emerald-400" : pts === 10 ? "text-sky-400" : pts === 5 ? "text-amber-400" : "text-rose-400";
+  const ptIcon = (pts: number) =>
+    pts === 20 ? <CheckCircle2 className="h-3 w-3 text-emerald-400"/> :
+    pts === 10 ? <ShieldCheck   className="h-3 w-3 text-sky-400"/> :
+    pts === 5  ? <AlertTriangle className="h-3 w-3 text-amber-400"/> :
+                 <ShieldAlert   className="h-3 w-3 text-rose-400"/>;
 
   return (
     <div className="flex flex-col items-center gap-5 py-8 text-center" dir="rtl">
       {/* Score circle */}
-      <div className={`w-24 h-24 rounded-2xl flex flex-col items-center justify-center border-2 ${grade.ring}`}>
+      <div className={`w-28 h-28 rounded-2xl flex flex-col items-center justify-center border-2 ${grade.ring}`}>
         <p className="text-3xl font-black text-foreground leading-none">{score}</p>
         <p className="text-xs text-muted-foreground">/{maxScore}</p>
       </div>
@@ -840,19 +829,19 @@ function DoneScreen({ score, history, onRestart }: { score: number; history: boo
       </div>
 
       {/* Per-round results */}
-      <div className="w-full max-w-xs flex flex-col gap-2" dir="rtl">
-        {history.map((correct, i) => (
+      <div className="w-full max-w-sm flex flex-col gap-2" dir="rtl">
+        {history.map((pts, i) => (
           <div key={i} className="flex items-center gap-2.5">
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${correct ? "bg-emerald-500/15 border border-emerald-500/40" : "bg-rose-500/15 border border-rose-500/40"}`}>
-              {correct
-                ? <CheckCircle2 className="h-3 w-3 text-emerald-400"/>
-                : <ShieldAlert   className="h-3 w-3 text-rose-400"/>
-              }
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border ${
+              pts === 20 ? "bg-emerald-500/15 border-emerald-500/40" :
+              pts === 10 ? "bg-sky-500/15     border-sky-500/40"     :
+              pts === 5  ? "bg-amber-500/15   border-amber-500/40"   :
+                           "bg-rose-500/15    border-rose-500/40"
+            }`}>
+              {ptIcon(pts)}
             </span>
-            <span className="flex-1 text-xs text-right text-muted-foreground">{SCENARIOS[i].attackName}</span>
-            <span className={`text-xs font-mono font-bold ${correct ? "text-emerald-400" : "text-rose-400"}`}>
-              {correct ? `+${TOTAL_PTS}` : "0"}
-            </span>
+            <span className="flex-1 text-xs text-right text-muted-foreground truncate">{SCENARIOS[i].attackName}</span>
+            <span className={`text-xs font-mono font-bold shrink-0 ${ptColor(pts)}`}>+{pts}/{MAX_PTS_PER_ROUND}</span>
           </div>
         ))}
       </div>
@@ -874,17 +863,16 @@ function DoneScreen({ score, history, onRestart }: { score: number; history: boo
 type Phase = "playing" | "modal" | "done";
 
 export default function SocialEngineeringLab() {
-  const [roundIdx,   setRoundIdx]   = useState(0);
-  const [score,      setScore]      = useState(0);
-  const [history,    setHistory]    = useState<boolean[]>([]);
-  const [phase,      setPhase]      = useState<Phase>("playing");
-  const [lastChoice, setLastChoice] = useState<"correct"|"wrong">("correct");
+  const [roundIdx,    setRoundIdx]    = useState(0);
+  const [score,       setScore]       = useState(0);
+  const [history,     setHistory]     = useState<number[]>([]);
+  const [phase,       setPhase]       = useState<Phase>("playing");
+  const [lastOption,  setLastOption]  = useState<Option | null>(null);
 
-  function handleChoice(choice: "correct"|"wrong") {
-    const correct = choice === "correct";
-    setLastChoice(choice);
-    if (correct) setScore(s => s + TOTAL_PTS);
-    setHistory(h => [...h, correct]);
+  function handleOptionSelect(opt: Option) {
+    setLastOption(opt);
+    setScore(s => s + opt.points);
+    setHistory(h => [...h, opt.points]);
     setPhase("modal");
   }
 
@@ -903,12 +891,12 @@ export default function SocialEngineeringLab() {
     setScore(0);
     setHistory([]);
     setPhase("playing");
+    setLastOption(null);
   }
 
   const scenario = SCENARIOS[roundIdx];
   const isLast   = roundIdx === SCENARIOS.length - 1;
 
-  // Done screen
   if (phase === "done") {
     return <DoneScreen score={score} history={history} onRestart={handleRestart}/>;
   }
@@ -925,7 +913,7 @@ export default function SocialEngineeringLab() {
           </div>
           <div className="text-right">
             <p className="text-2xl font-black text-foreground leading-none">{score}</p>
-            <p className="text-[10px] text-muted-foreground">/{SCENARIOS.length * TOTAL_PTS} نقطة</p>
+            <p className="text-[10px] text-muted-foreground">/{SCENARIOS.length * MAX_PTS_PER_ROUND} نقطة</p>
           </div>
         </div>
         <ProgressBar current={roundIdx} total={SCENARIOS.length} score={score}/>
@@ -935,28 +923,45 @@ export default function SocialEngineeringLab() {
       <div className="relative">
 
         {/* Result modal overlay */}
-        {phase === "modal" && (
+        {phase === "modal" && lastOption && (
           <ResultModal
-            correct={lastChoice === "correct"}
+            points={lastOption.points}
             attackName={scenario.attackName}
-            explanation={lastChoice === "correct" ? scenario.correctExp : scenario.wrongExp}
+            feedback={lastOption.feedback}
             isLast={isLast}
             onNext={handleNext}
           />
         )}
 
-        {/* Render active simulator */}
-        {scenario.type === "email"         && <EmailSim         onChoice={handleChoice}/>}
-        {scenario.type === "sms"           && <SmsSim           onChoice={handleChoice}/>}
-        {scenario.type === "vishing"       && <VishingSim        onChoice={handleChoice}/>}
-        {scenario.type === "baiting"       && <BaitingSim        onChoice={handleChoice}/>}
-        {scenario.type === "scareware"     && <ScarewareSim      onChoice={handleChoice}/>}
-        {scenario.type === "ceofraud"      && <CeoFraudSim       onChoice={handleChoice}/>}
-        {scenario.type === "eviltwin"      && <EvilTwinSim       onChoice={handleChoice}/>}
-        {scenario.type === "cloudspoofing" && <CloudSpoofSim     onChoice={handleChoice}/>}
-        {scenario.type === "linkedinphish" && <LinkedinPhishSim  onChoice={handleChoice}/>}
-        {scenario.type === "tailgating"    && <TailgatingSim     onChoice={handleChoice}/>}
+        {/* Render active simulator (purely visual — no action buttons inside) */}
+        {scenario.type === "email"         && <EmailSim/>}
+        {scenario.type === "sms"           && <SmsSim/>}
+        {scenario.type === "vishing"       && <VishingSim/>}
+        {scenario.type === "baiting"       && <BaitingSim/>}
+        {scenario.type === "scareware"     && <ScarewareSim/>}
+        {scenario.type === "ceofraud"      && <CeoFraudSim/>}
+        {scenario.type === "eviltwin"      && <EvilTwinSim/>}
+        {scenario.type === "cloudspoofing" && <CloudSpoofSim/>}
+        {scenario.type === "linkedinphish" && <LinkedinPhishSim/>}
+        {scenario.type === "tailgating"    && <TailgatingSim/>}
       </div>
+
+      {/* ── Options panel ─────────────────────────────────────────────────── */}
+      {phase === "playing" && (
+        <div className="flex flex-col gap-2 pt-1" dir="rtl">
+          <p className="text-xs text-muted-foreground font-semibold">ماذا ستفعل؟</p>
+          {scenario.options.map((opt, i) => (
+            <button
+              key={i}
+              onClick={() => handleOptionSelect(opt)}
+              className="w-full text-right px-4 py-3 bg-card border border-border hover:border-foreground/30 hover:bg-muted/40 rounded-xl text-sm text-foreground transition-colors leading-relaxed"
+            >
+              <span className="font-mono text-muted-foreground text-xs ml-2">{String.fromCharCode(0x0041 + i)}.</span>
+              {opt.text}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
