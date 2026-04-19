@@ -5,7 +5,39 @@ import { Spinner } from "@/components/Spinner";
 import { ExportButton } from "@/components/ExportButton";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUrlSafetyCheck, getUrlSafetyCheckQueryKey } from "@workspace/api-client-react";
-import { AlertTriangle, ShieldCheck, ShieldAlert, Link2 } from "lucide-react";
+import { AlertTriangle, ShieldCheck, ShieldAlert, Link2, XCircle } from "lucide-react";
+
+/* ── Validation ────────────────────────────────────────────────────────────── */
+
+/**
+ * Returns true only if the input is a plausible URL or bare domain/IP.
+ * Rejects random words, single tokens without TLDs, and empty strings.
+ */
+function isValidInput(raw: string): boolean {
+  const s = raw.trim();
+  if (!s) return false;
+
+  // Normalise: prepend scheme if missing so URL constructor can parse it
+  const withScheme = /^https?:\/\//i.test(s) ? s : `https://${s}`;
+
+  let hostname: string;
+  try {
+    hostname = new URL(withScheme).hostname;
+  } catch {
+    return false;
+  }
+
+  if (!hostname) return false;
+
+  // Valid IPv4
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) return true;
+
+  // Domain must have at least one dot and a TLD of 2-6 letters
+  // e.g. google.com ✓   sub.domain.co.uk ✓   localhost ✗   hello ✗
+  return /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,6}$/i.test(hostname);
+}
+
+/* ── Helpers ───────────────────────────────────────────────────────────────── */
 
 function scoreColor(score: number) {
   if (score >= 80) return "bg-green-500";
@@ -19,11 +51,15 @@ function scoreLabel(score: number, isRtl: boolean) {
   return isRtl ? "خطر" : "Dangerous";
 }
 
+/* ── Component ─────────────────────────────────────────────────────────────── */
+
 export function DeepLinkTool() {
   const { dir } = useLanguage();
   const isRtl = dir === "rtl";
+
   const [inputValue, setInputValue] = useState("");
-  const [url, setUrl] = useState<string | undefined>(undefined);
+  const [url, setUrl]               = useState<string | undefined>(undefined);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const { data, isLoading, error } = useUrlSafetyCheck(
     { url: url! },
@@ -32,31 +68,58 @@ export function DeepLinkTool() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputValue.trim()) {
-      let u = inputValue.trim();
-      if (!u.startsWith("http://") && !u.startsWith("https://")) u = "https://" + u;
-      setUrl(u);
+    const raw = inputValue.trim();
+
+    // ── Strict validation first ──
+    if (!isValidInput(raw)) {
+      setValidationError(
+        isRtl
+          ? "الرجاء إدخال رابط أو نطاق صحيح (مثال: https://example.com أو google.com)"
+          : "Please enter a valid URL or domain (e.g. https://example.com or google.com)"
+      );
+      setUrl(undefined);
+      return;
     }
+
+    // Valid — clear any previous validation error and proceed
+    setValidationError(null);
+    let u = raw;
+    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    setUrl(u);
   };
 
   const score = data?.score ?? 100;
 
   return (
     <div className="space-y-6" id="deeplink-report">
-      <form onSubmit={handleSubmit} className="flex gap-3 max-w-xl">
-        <Input
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          placeholder="https://example.com/path?param=value"
-          data-testid="input-deeplink"
-          className="flex-1 font-mono"
-          dir="ltr"
-        />
-        <Button type="submit" disabled={isLoading} data-testid="button-submit-deeplink" className="min-w-[80px]">
-          {isLoading ? <Spinner /> : (isRtl ? "فحص" : "Check")}
-        </Button>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2 max-w-xl">
+        <div className="flex gap-3">
+          <Input
+            value={inputValue}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              if (validationError) setValidationError(null);
+            }}
+            placeholder="https://example.com/path?param=value"
+            data-testid="input-deeplink"
+            className={`flex-1 font-mono ${validationError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+            dir="ltr"
+          />
+          <Button type="submit" disabled={isLoading} data-testid="button-submit-deeplink" className="min-w-[80px]">
+            {isLoading ? <Spinner /> : (isRtl ? "فحص" : "Check")}
+          </Button>
+        </div>
+
+        {/* Validation error message */}
+        {validationError && (
+          <div className="flex items-start gap-2 text-destructive text-xs animate-in fade-in slide-in-from-top-1 duration-200">
+            <XCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+            <span>{validationError}</span>
+          </div>
+        )}
       </form>
 
+      {/* API / network error */}
       {error && (
         <div className="flex items-center gap-3 p-4 bg-destructive/10 text-destructive border border-destructive/20 rounded-lg">
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
@@ -64,7 +127,8 @@ export function DeepLinkTool() {
         </div>
       )}
 
-      {data && (
+      {/* Results */}
+      {data && !validationError && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-foreground">{isRtl ? "نتائج الفحص العميق" : "Deep Check Results"}</h3>
@@ -92,7 +156,10 @@ export function DeepLinkTool() {
               <span className="font-bold text-foreground">{score}/100</span>
             </div>
             <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-              <div className={`h-2.5 rounded-full transition-all duration-700 ${scoreColor(score)}`} style={{ width: `${score}%` }} />
+              <div
+                className={`h-2.5 rounded-full transition-all duration-700 ${scoreColor(score)}`}
+                style={{ width: `${score}%` }}
+              />
             </div>
           </div>
 
@@ -109,9 +176,9 @@ export function DeepLinkTool() {
                     <div className="space-y-1 text-xs">
                       {[
                         { label: isRtl ? "البروتوكول" : "Protocol", val: u.protocol },
-                        { label: isRtl ? "النطاق" : "Domain", val: u.hostname },
-                        { label: isRtl ? "المسار" : "Path", val: u.pathname || "/" },
-                        { label: isRtl ? "المعاملات" : "Params", val: u.search || isRtl ? "لا يوجد" : "None" },
+                        { label: isRtl ? "النطاق"     : "Domain",   val: u.hostname },
+                        { label: isRtl ? "المسار"     : "Path",     val: u.pathname || "/" },
+                        { label: isRtl ? "المعاملات"  : "Params",   val: u.search || (isRtl ? "لا يوجد" : "None") },
                       ].map((row) => (
                         <div key={row.label} className="flex justify-between gap-2">
                           <span className="text-muted-foreground">{row.label}</span>
@@ -144,17 +211,23 @@ export function DeepLinkTool() {
             ) : (
               <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 flex items-center gap-3">
                 <ShieldCheck className="h-6 w-6 text-green-400 flex-shrink-0" />
-                <span className="text-sm text-green-400 font-medium">{isRtl ? "لم يتم اكتشاف أي تهديدات" : "No threats detected"}</span>
+                <span className="text-sm text-green-400 font-medium">
+                  {isRtl ? "لم يتم اكتشاف أي تهديدات" : "No threats detected"}
+                </span>
               </div>
             )}
           </div>
 
           {(data.categories?.length ?? 0) > 0 && (
             <div>
-              <h4 className="text-sm font-semibold mb-2 text-muted-foreground">{isRtl ? "التصنيفات" : "Categories"}</h4>
+              <h4 className="text-sm font-semibold mb-2 text-muted-foreground">
+                {isRtl ? "التصنيفات" : "Categories"}
+              </h4>
               <div className="flex flex-wrap gap-2">
                 {data.categories!.map((cat, i) => (
-                  <span key={i} className="text-xs px-2.5 py-1 rounded-full border border-border bg-muted/30 text-foreground">{cat}</span>
+                  <span key={i} className="text-xs px-2.5 py-1 rounded-full border border-border bg-muted/30 text-foreground">
+                    {cat}
+                  </span>
                 ))}
               </div>
             </div>
