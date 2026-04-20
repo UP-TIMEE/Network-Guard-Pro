@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Moon, Sun, Shield, Menu, X } from "lucide-react";
+import { Moon, Sun, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -36,13 +36,15 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
 
-        {/* Logo — DOM-first → appears on reading-start (RIGHT in RTL, LEFT in LTR) */}
+        {/* Logo */}
         <Link href="/">
-          <div className="flex items-center gap-2 cursor-pointer" data-testid="nav-logo">
-            <div className="bg-foreground rounded-lg p-1.5">
-              <Shield className="h-5 w-5 text-background" />
-            </div>
-            <span className="text-xl font-black text-foreground tracking-widest">UPTIME</span>
+          <div className="flex items-center cursor-pointer" data-testid="nav-logo">
+            <img
+              src={`${import.meta.env.BASE_URL}uptime-logo.png`}
+              alt="UPTIME"
+              className="h-9 w-auto dark:invert-0 invert"
+              style={{ imageRendering: "crisp-edges" }}
+            />
           </div>
         </Link>
 
