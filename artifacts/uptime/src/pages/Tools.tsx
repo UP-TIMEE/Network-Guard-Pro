@@ -20,8 +20,9 @@ import { PingTool } from "@/components/tools/PingTool";
 import {
   Calculator, Network, Timer, Hash, MapPin, Globe,
   ScanSearch, Cpu, Mail, Link2, Lock, Activity,
-  ArrowRight, ArrowLeft, Search, LayoutGrid
+  ArrowRight, ArrowLeft, Search, LayoutGrid, HelpCircle
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type ModuleId = "planning" | "scan" | "analysis";
 
@@ -194,6 +195,16 @@ export default function Tools() {
                               <span className="text-xs text-muted-foreground font-mono border border-border px-1.5 py-0.5 rounded hidden sm:inline">
                                 {toolT.sublabel}
                               </span>
+                              <Tooltip>
+                                <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-border hover:border-foreground/40 cursor-help transition-colors">
+                                    <HelpCircle className="h-3 w-3 text-muted-foreground hover:text-foreground transition-colors" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[260px] text-center text-xs leading-relaxed">
+                                  {toolT.desc}
+                                </TooltipContent>
+                              </Tooltip>
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block text-right">
                               {toolT.desc}

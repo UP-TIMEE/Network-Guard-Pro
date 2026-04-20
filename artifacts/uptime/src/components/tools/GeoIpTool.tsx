@@ -5,9 +5,12 @@ import { Spinner } from "@/components/Spinner";
 import { ExportButton } from "@/components/ExportButton";
 import { useGeoIpLookup, getGeoIpLookupQueryKey } from "@workspace/api-client-react";
 import { AlertTriangle, Globe, MapPin, Building2, Wifi } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { sanitizeDomain } from "@/lib/sanitize";
 import "leaflet/dist/leaflet.css";
 
 export function GeoIpTool() {
+  const { toast } = useToast();
   const [inputValue, setInputValue] = useState("");
   const [target, setTarget] = useState<string | undefined>(undefined);
   const [MapComponents, setMapComponents] = useState<any>(null);
@@ -40,11 +43,28 @@ export function GeoIpTool() {
     { query: { enabled: !!target, queryKey: getGeoIpLookupQueryKey({ target: target! }) } }
   );
 
+  useEffect(() => {
+    if (data && !isLoading) {
+      if (data.isPrivate) {
+        toast({ title: "عنوان داخلي", description: "هذا عنوان IP خاص بالشبكة المحلية", variant: "default" });
+      } else {
+        toast({ title: "✓ تم الفحص بنجاح", description: `${data.city ?? ""} — ${data.country ?? ""}`.replace(/^—\s*/, ""), variant: "default" });
+      }
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (error) {
+      toast({ title: "فشل الفحص", description: "تأكد من صحة عنوان IP أو النطاق", variant: "destructive" });
+    }
+  }, [error]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputValue.trim()) {
+    const clean = sanitizeDomain(inputValue);
+    if (clean) {
       setTarget(undefined);
-      setTimeout(() => setTarget(inputValue.trim()), 10);
+      setTimeout(() => setTarget(clean), 10);
     }
   };
 

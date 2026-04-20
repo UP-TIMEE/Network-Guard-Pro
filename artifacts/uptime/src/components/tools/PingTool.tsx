@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/Spinner";
 import { ExportButton } from "@/components/ExportButton";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useToast } from "@/hooks/use-toast";
+import { sanitizeDomain } from "@/lib/sanitize";
 import { Wifi, WifiOff, Activity, Clock } from "lucide-react";
 
 interface PingResult {
@@ -33,6 +35,7 @@ async function pingOnce(host: string): Promise<{ latencyMs: number | null; statu
 
 export function PingTool() {
   const { dir } = useLanguage();
+  const { toast } = useToast();
   const isRtl = dir === "rtl";
   const [host, setHost] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,7 +47,7 @@ export function PingTool() {
   const PING_COUNT = 4;
 
   const handlePing = async () => {
-    const h = host.trim();
+    const h = sanitizeDomain(host);
     if (!h) return;
     setLoading(true);
     setError("");
@@ -69,8 +72,14 @@ export function PingTool() {
     const maxMs = latencies.length ? Math.max(...latencies) : null;
     const packetLoss = Math.round(((PING_COUNT - successful.length) / PING_COUNT) * 100);
 
-    setResult({ host: h, results, avgMs, minMs, maxMs, packetLoss });
+    const finalResult = { host: h, results, avgMs, minMs, maxMs, packetLoss };
+    setResult(finalResult);
     setLoading(false);
+    if (finalResult.packetLoss === 100) {
+      toast({ title: isRtl ? "لا يمكن الوصول" : "Unreachable", description: isRtl ? `تعذر الوصول إلى ${h}` : `Could not reach ${h}`, variant: "destructive" });
+    } else {
+      toast({ title: isRtl ? "✓ اكتمل الاختبار" : "✓ Test Complete", description: isRtl ? `متوسط الكمون: ${finalResult.avgMs}ms` : `Avg latency: ${finalResult.avgMs}ms`, variant: "default" });
+    }
   };
 
   const latencyColor = (ms: number | null) => {
