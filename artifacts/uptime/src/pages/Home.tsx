@@ -17,12 +17,12 @@ export default function Home() {
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-10">
         {/* ── Compact brand identity ── */}
-        <div className="flex flex-col items-center text-center mb-10 gap-5">
+        <div className="flex flex-col items-center text-center mb-10 gap-3">
           <img
             src={`${import.meta.env.BASE_URL}hero-icon.png`}
             alt="UPTIME icon"
             className="dark:invert-0 invert"
-            style={{ height: "clamp(72px, 11vw, 100px)", width: "auto", imageRendering: "auto" }}
+            style={{ height: "clamp(90px, 13vw, 128px)", width: "auto", imageRendering: "auto" }}
           />
           <p className="text-base text-muted-foreground max-w-md leading-relaxed">
             {t("hero.subtitle")}
