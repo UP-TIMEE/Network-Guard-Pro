@@ -5,60 +5,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Wrench, Rss, ArrowLeft, ArrowRight, GraduationCap } from "lucide-react";
 
 
-function UptimeHeroIcon() {
-  return (
-    <svg
-      width="88"
-      height="88"
-      viewBox="0 0 88 88"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-      className="text-foreground"
-    >
-      {/* Outer ring */}
-      <circle cx="44" cy="44" r="41" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.2" />
-      {/* Middle ring */}
-      <circle cx="44" cy="44" r="30" stroke="currentColor" strokeWidth="1" strokeOpacity="0.12" strokeDasharray="4 3" />
-
-      {/* Network nodes */}
-      <circle cx="44" cy="14" r="4" fill="currentColor" fillOpacity="0.9" />
-      <circle cx="70" cy="30" r="3.5" fill="currentColor" fillOpacity="0.7" />
-      <circle cx="70" cy="58" r="3.5" fill="currentColor" fillOpacity="0.7" />
-      <circle cx="44" cy="74" r="4" fill="currentColor" fillOpacity="0.9" />
-      <circle cx="18" cy="58" r="3.5" fill="currentColor" fillOpacity="0.7" />
-      <circle cx="18" cy="30" r="3.5" fill="currentColor" fillOpacity="0.7" />
-
-      {/* Connecting edges */}
-      <line x1="44" y1="14" x2="70" y2="30" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.3" />
-      <line x1="70" y1="30" x2="70" y2="58" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.3" />
-      <line x1="70" y1="58" x2="44" y2="74" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.3" />
-      <line x1="44" y1="74" x2="18" y2="58" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.3" />
-      <line x1="18" y1="58" x2="18" y2="30" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.3" />
-      <line x1="18" y1="30" x2="44" y2="14" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.3" />
-
-      {/* Cross diagonals */}
-      <line x1="44" y1="14" x2="70" y2="58" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.15" />
-      <line x1="44" y1="14" x2="18" y2="58" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.15" />
-      <line x1="18" y1="30" x2="70" y2="30" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.15" />
-      <line x1="18" y1="30" x2="44" y2="74" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.15" />
-      <line x1="70" y1="30" x2="44" y2="74" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.15" />
-      <line x1="18" y1="58" x2="70" y2="58" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.15" />
-
-      {/* Center node — bright */}
-      <circle cx="44" cy="44" r="6" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" />
-      <circle cx="44" cy="44" r="3" fill="currentColor" fillOpacity="0.9" />
-
-      {/* Spokes from center */}
-      <line x1="44" y1="38" x2="44" y2="18" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
-      <line x1="44" y1="50" x2="44" y2="70" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
-      <line x1="50" y1="44" x2="67" y2="33" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
-      <line x1="38" y1="44" x2="21" y2="33" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
-      <line x1="50" y1="44" x2="67" y2="55" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
-      <line x1="38" y1="44" x2="21" y2="55" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
-    </svg>
-  );
-}
 
 export default function Home() {
   const { t, dir } = useLanguage();
@@ -72,7 +18,12 @@ export default function Home() {
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-10">
         {/* ── Compact brand identity ── */}
         <div className="flex flex-col items-center text-center mb-10 gap-5">
-          <UptimeHeroIcon />
+          <img
+            src={`${import.meta.env.BASE_URL}hero-icon.png`}
+            alt="UPTIME icon"
+            className="dark:invert-0 invert"
+            style={{ height: "clamp(72px, 11vw, 100px)", width: "auto", imageRendering: "auto" }}
+          />
           <p className="text-base text-muted-foreground max-w-md leading-relaxed">
             {t("hero.subtitle")}
           </p>
