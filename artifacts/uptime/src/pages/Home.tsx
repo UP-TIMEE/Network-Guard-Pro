@@ -4,7 +4,6 @@ import { Footer } from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Wrench, Rss, ArrowLeft, ArrowRight, GraduationCap } from "lucide-react";
 
-const LOGO_SRC = `${import.meta.env.BASE_URL}uptime-logo.png`;
 
 export default function Home() {
   const { t, dir } = useLanguage();
@@ -18,17 +17,6 @@ export default function Home() {
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-10">
         {/* ── Compact brand identity ── */}
         <div className="flex flex-col items-center text-center mb-10">
-          <div className="mb-6">
-            <img
-              src={LOGO_SRC}
-              alt="UPTIME"
-              className="w-auto dark:invert-0 invert"
-              style={{ height: "clamp(56px, 10vw, 96px)", imageRendering: "auto" }}
-              data-testid="hero-title"
-              fetchPriority="high"
-              decoding="sync"
-            />
-          </div>
           <p className="text-base text-muted-foreground max-w-md leading-relaxed">
             {t("hero.subtitle")}
           </p>
