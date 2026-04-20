@@ -5,6 +5,38 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Wrench, Rss, ArrowLeft, ArrowRight, GraduationCap } from "lucide-react";
 
 
+function UptimeShieldIcon() {
+  return (
+    <svg
+      width="72"
+      height="80"
+      viewBox="0 0 72 80"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      className="text-foreground"
+    >
+      {/* Shield outer shape */}
+      <path
+        d="M36 2L6 14V38C6 56.5 19.2 73.2 36 78C52.8 73.2 66 56.5 66 38V14L36 2Z"
+        fill="currentColor"
+        fillOpacity="0.08"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+      />
+      {/* Inner grid — vertical dividers */}
+      <line x1="26" y1="24" x2="26" y2="56" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <line x1="36" y1="20" x2="36" y2="58" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <line x1="46" y1="24" x2="46" y2="56" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      {/* Inner grid — horizontal dividers */}
+      <line x1="18" y1="32" x2="54" y2="32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <line x1="16" y1="42" x2="56" y2="42" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <line x1="18" y1="52" x2="54" y2="52" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function Home() {
   const { t, dir } = useLanguage();
   const isRtl = dir === "rtl";
@@ -16,7 +48,8 @@ export default function Home() {
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-10">
         {/* ── Compact brand identity ── */}
-        <div className="flex flex-col items-center text-center mb-10">
+        <div className="flex flex-col items-center text-center mb-10 gap-5">
+          <UptimeShieldIcon />
           <p className="text-base text-muted-foreground max-w-md leading-relaxed">
             {t("hero.subtitle")}
           </p>
