@@ -42,8 +42,8 @@ export function Header() {
             <img
               src={`${import.meta.env.BASE_URL}uptime-logo.png`}
               alt="UPTIME"
-              className="h-9 w-auto dark:invert-0 invert"
-              style={{ imageRendering: "crisp-edges" }}
+              className="h-6 w-auto dark:invert-0 invert"
+              style={{ imageRendering: "auto", WebkitFontSmoothing: "antialiased" }}
             />
           </div>
         </Link>

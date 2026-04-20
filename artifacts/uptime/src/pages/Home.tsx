@@ -22,8 +22,11 @@ export default function Home() {
             <img
               src={LOGO_SRC}
               alt="UPTIME"
-              className="h-20 w-auto dark:invert-0 invert"
+              className="w-auto dark:invert-0 invert"
+              style={{ height: "clamp(56px, 10vw, 96px)", imageRendering: "auto" }}
               data-testid="hero-title"
+              fetchPriority="high"
+              decoding="sync"
             />
           </div>
           <p className="text-base text-muted-foreground max-w-md leading-relaxed">
