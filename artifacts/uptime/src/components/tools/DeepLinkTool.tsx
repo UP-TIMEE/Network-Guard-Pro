@@ -1,40 +1,145 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/Spinner";
 import { ExportButton } from "@/components/ExportButton";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUrlSafetyCheck, getUrlSafetyCheckQueryKey } from "@workspace/api-client-react";
-import { AlertTriangle, ShieldCheck, ShieldAlert, Link2, XCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  ShieldCheck,
+  ShieldAlert,
+  Link2,
+  XCircle,
+  CheckCircle2,
+} from "lucide-react";
 
-/* ── Validation ────────────────────────────────────────────────────────────── */
+/* ── Known-TLD whitelist ──────────────────────────────────────────────────── */
 
-/**
- * Returns true only if the input is a plausible URL or bare domain/IP.
- * Rejects random words, single tokens without TLDs, and empty strings.
- */
-function isValidInput(raw: string): boolean {
+const KNOWN_TLDS = new Set([
+  // Generic
+  "com","net","org","edu","gov","mil","int","info","biz","name","pro","mobi",
+  "coop","aero","museum","tel","travel","jobs","cat","post","xxx",
+  // New Generic
+  "app","web","dev","ai","io","co","me","tv","cc","ws","bz","us","eu","cx",
+  "online","site","store","shop","tech","digital","cloud","media","news",
+  "agency","consulting","services","solutions","systems","global","group",
+  "network","link","click","email","support","blog","wiki","forum",
+  // Country codes — Arab world + common
+  "sa","ae","eg","kw","qa","bh","om","jo","iq","sy","ly","tn","ma","dz","ye",
+  "uk","de","fr","ru","cn","jp","kr","in","br","au","ca","it","es","nl","pl",
+  "se","no","dk","fi","ch","at","be","pt","cz","hu","ro","bg","hr","gr","tr",
+  "pk","bd","ng","za","mx","ar","cl","pe","co","ve",
+  // Sponsored / special
+  "museum","int","arpa","gov","mil",
+]);
+
+/* ── Strict URL validation ────────────────────────────────────────────────── */
+
+type ValidationState = "empty" | "valid" | "invalid";
+
+interface ValidationResult {
+  state: ValidationState;
+  messageAr: string;
+  messageEn: string;
+}
+
+function validateUrl(raw: string): ValidationResult {
   const s = raw.trim();
-  if (!s) return false;
 
-  // Normalise: prepend scheme if missing so URL constructor can parse it
-  const withScheme = /^https?:\/\//i.test(s) ? s : `https://${s}`;
+  if (!s) return { state: "empty", messageAr: "", messageEn: "" };
 
-  let hostname: string;
-  try {
-    hostname = new URL(withScheme).hostname;
-  } catch {
-    return false;
+  // Must start with http/https OR be a bare domain/IP
+  const hasScheme = /^https?:\/\//i.test(s);
+
+  // If it has a scheme, require it to be http or https (reject ftp://, javascript:// etc.)
+  if (/^[a-z][a-z0-9+\-.]*:\/\//i.test(s) && !hasScheme) {
+    return {
+      state: "invalid",
+      messageAr: "البروتوكول غير مدعوم — استخدم https:// أو http://",
+      messageEn: "Unsupported scheme — use https:// or http://",
+    };
   }
 
-  if (!hostname) return false;
+  const withScheme = hasScheme ? s : `https://${s}`;
 
-  // Valid IPv4
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) return true;
+  let hostname: string;
+  let url: URL;
+  try {
+    url = new URL(withScheme);
+    hostname = url.hostname.toLowerCase();
+  } catch {
+    return {
+      state: "invalid",
+      messageAr: "الرابط غير صالح — تحقق من الصيغة",
+      messageEn: "Invalid URL — check the format",
+    };
+  }
 
-  // Domain must have at least one dot and a TLD of 2-6 letters
-  // e.g. google.com ✓   sub.domain.co.uk ✓   localhost ✗   hello ✗
-  return /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,6}$/i.test(hostname);
+  if (!hostname) {
+    return {
+      state: "invalid",
+      messageAr: "لم يُعثر على نطاق في الرابط",
+      messageEn: "No hostname found in URL",
+    };
+  }
+
+  // Allow valid IPv4
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
+    const parts = hostname.split(".").map(Number);
+    if (parts.every((p) => p >= 0 && p <= 255)) {
+      return { state: "valid", messageAr: "", messageEn: "" };
+    }
+    return {
+      state: "invalid",
+      messageAr: "عنوان IP غير صالح",
+      messageEn: "Invalid IP address",
+    };
+  }
+
+  // Reject plain hostnames without a dot (e.g. "localhost", "hello")
+  if (!hostname.includes(".")) {
+    return {
+      state: "invalid",
+      messageAr: "النطاق يجب أن يحتوي على امتداد (مثل .com أو .net أو .sa)",
+      messageEn: "Domain must include a TLD extension (e.g. .com, .net, .sa)",
+    };
+  }
+
+  // Extract TLD (last label)
+  const labels = hostname.split(".");
+  const tld = labels[labels.length - 1];
+
+  // TLD must be 2-8 alphabetic characters
+  if (!/^[a-z]{2,8}$/.test(tld)) {
+    return {
+      state: "invalid",
+      messageAr: `الامتداد "${tld}" غير صالح — يجب أن يتكون من حروف فقط (2-8 أحرف)`,
+      messageEn: `Extension ".${tld}" is invalid — must be 2-8 alphabetic characters`,
+    };
+  }
+
+  // Strict whitelist check
+  if (!KNOWN_TLDS.has(tld)) {
+    return {
+      state: "invalid",
+      messageAr: `الامتداد ".${tld}" غير معروف — استخدم امتداداً صالحاً (مثل .com، .net، .sa)`,
+      messageEn: `".${tld}" is not a recognized extension — use a valid one (e.g. .com, .net, .sa)`,
+    };
+  }
+
+  // Each label must match valid domain-label format
+  const labelRegex = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i;
+  const invalidLabel = labels.slice(0, -1).find((l) => !labelRegex.test(l));
+  if (invalidLabel) {
+    return {
+      state: "invalid",
+      messageAr: `جزء النطاق "${invalidLabel}" يحتوي على أحرف غير مسموح بها`,
+      messageEn: `Domain label "${invalidLabel}" contains invalid characters`,
+    };
+  }
+
+  return { state: "valid", messageAr: "", messageEn: "" };
 }
 
 /* ── Helpers ───────────────────────────────────────────────────────────────── */
@@ -57,9 +162,24 @@ export function DeepLinkTool() {
   const { dir } = useLanguage();
   const isRtl = dir === "rtl";
 
-  const [inputValue, setInputValue] = useState("");
-  const [url, setUrl]               = useState<string | undefined>(undefined);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [inputValue, setInputValue]     = useState("");
+  const [url, setUrl]                   = useState<string | undefined>(undefined);
+  const [liveValidation, setLiveValid]  = useState<ValidationResult>({ state: "empty", messageAr: "", messageEn: "" });
+
+  // Debounce live validation so it fires 400 ms after user stops typing
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!inputValue.trim()) {
+      setLiveValid({ state: "empty", messageAr: "", messageEn: "" });
+      return;
+    }
+    debounceRef.current = setTimeout(() => {
+      setLiveValid(validateUrl(inputValue));
+    }, 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [inputValue]);
 
   const { data, isLoading, error } = useUrlSafetyCheck(
     { url: url! },
@@ -68,53 +188,75 @@ export function DeepLinkTool() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const raw = inputValue.trim();
+    const result = validateUrl(inputValue);
+    setLiveValid(result);
 
-    // ── Strict validation first ──
-    if (!isValidInput(raw)) {
-      setValidationError(
-        isRtl
-          ? "الرجاء إدخال رابط أو نطاق صحيح (مثال: https://example.com أو google.com)"
-          : "Please enter a valid URL or domain (e.g. https://example.com or google.com)"
-      );
+    if (result.state !== "valid") {
       setUrl(undefined);
       return;
     }
 
-    // Valid — clear any previous validation error and proceed
-    setValidationError(null);
-    let u = raw;
+    let u = inputValue.trim();
     if (!/^https?:\/\//i.test(u)) u = "https://" + u;
     setUrl(u);
   };
 
   const score = data?.score ?? 100;
 
+  // Border color based on live state
+  const inputBorder =
+    liveValidation.state === "valid"
+      ? "border-green-500 focus-visible:ring-green-500"
+      : liveValidation.state === "invalid"
+      ? "border-destructive focus-visible:ring-destructive"
+      : "";
+
   return (
     <div className="space-y-6" id="deeplink-report">
       <form onSubmit={handleSubmit} className="flex flex-col gap-2 max-w-xl">
         <div className="flex gap-3">
-          <Input
-            value={inputValue}
-            onChange={(e) => {
-              setInputValue(e.target.value);
-              if (validationError) setValidationError(null);
-            }}
-            placeholder="https://example.com/path?param=value"
-            data-testid="input-deeplink"
-            className={`flex-1 font-mono ${validationError ? "border-destructive focus-visible:ring-destructive" : ""}`}
-            dir="ltr"
-          />
-          <Button type="submit" disabled={isLoading} data-testid="button-submit-deeplink" className="min-w-[80px]">
+          {/* Input with validation indicator icon */}
+          <div className="relative flex-1">
+            <Input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="https://example.com/path?param=value"
+              data-testid="input-deeplink"
+              className={`w-full font-mono pr-9 ${inputBorder}`}
+              dir="ltr"
+              autoComplete="off"
+              spellCheck={false}
+            />
+            {/* Inline icon */}
+            {liveValidation.state === "valid" && (
+              <CheckCircle2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500 pointer-events-none" />
+            )}
+            {liveValidation.state === "invalid" && (
+              <XCircle className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive pointer-events-none" />
+            )}
+          </div>
+
+          <Button
+            type="submit"
+            disabled={isLoading || liveValidation.state === "invalid"}
+            data-testid="button-submit-deeplink"
+            className="min-w-[80px]"
+          >
             {isLoading ? <Spinner /> : (isRtl ? "فحص" : "Check")}
           </Button>
         </div>
 
-        {/* Validation error message */}
-        {validationError && (
+        {/* Live validation feedback */}
+        {liveValidation.state === "invalid" && (
           <div className="flex items-start gap-2 text-destructive text-xs animate-in fade-in slide-in-from-top-1 duration-200">
             <XCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-            <span>{validationError}</span>
+            <span>{isRtl ? liveValidation.messageAr : liveValidation.messageEn}</span>
+          </div>
+        )}
+        {liveValidation.state === "valid" && (
+          <div className="flex items-center gap-2 text-green-500 text-xs animate-in fade-in slide-in-from-top-1 duration-200">
+            <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
+            <span>{isRtl ? "الرابط صالح — يمكنك الفحص" : "URL looks valid — ready to scan"}</span>
           </div>
         )}
       </form>
@@ -128,7 +270,7 @@ export function DeepLinkTool() {
       )}
 
       {/* Results */}
-      {data && !validationError && (
+      {data && liveValidation.state !== "invalid" && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-foreground">{isRtl ? "نتائج الفحص العميق" : "Deep Check Results"}</h3>
