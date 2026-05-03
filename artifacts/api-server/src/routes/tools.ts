@@ -405,6 +405,189 @@ router.get("/tools/ssl", async (req, res) => {
   }
 });
 
+/* ── VirusTotal helpers ────────────────────────────────────────────────────── */
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function fetchJsonWithHeaders(url: string, headers: Record<string, string>): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const isHttps = url.startsWith("https://");
+    const httpModule = isHttps ? https : (require("http") as typeof import("http"));
+    const reqOptions = {
+      headers: { "User-Agent": "UPTIME-Security/1.0", ...headers },
+      timeout: 15000,
+    };
+    const req = httpModule.get(url, reqOptions as any, (res: any) => {
+      let data = "";
+      res.on("data", (chunk: any) => { data += chunk; });
+      res.on("end", () => {
+        if (res.statusCode === 404) {
+          const err: any = new Error("Not found");
+          err.statusCode = 404;
+          return reject(err);
+        }
+        if (res.statusCode !== 200) {
+          const err: any = new Error(`HTTP ${res.statusCode}`);
+          err.statusCode = res.statusCode;
+          try { err.body = JSON.parse(data); } catch {}
+          return reject(err);
+        }
+        try { resolve(JSON.parse(data)); }
+        catch { reject(new Error("Invalid JSON")); }
+      });
+    });
+    req.on("error", reject);
+    req.on("timeout", () => { req.destroy(); reject(new Error("Request timeout")); });
+  });
+}
+
+function postFormWithHeaders(url: string, body: string, headers: Record<string, string>): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const urlObj = new URL(url);
+    const options = {
+      hostname: urlObj.hostname,
+      path: urlObj.pathname + urlObj.search,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Length": Buffer.byteLength(body),
+        "User-Agent": "UPTIME-Security/1.0",
+        ...headers,
+      },
+      timeout: 15000,
+    };
+    const req = https.request(options, (res: any) => {
+      let data = "";
+      res.on("data", (chunk: any) => { data += chunk; });
+      res.on("end", () => {
+        if (res.statusCode !== 200 && res.statusCode !== 201) {
+          const err: any = new Error(`HTTP ${res.statusCode}`);
+          err.statusCode = res.statusCode;
+          try { err.body = JSON.parse(data); } catch {}
+          return reject(err);
+        }
+        try { resolve(JSON.parse(data)); }
+        catch { reject(new Error("Invalid JSON from POST")); }
+      });
+    });
+    req.on("error", reject);
+    req.on("timeout", () => { req.destroy(); reject(new Error("POST timeout")); });
+    req.write(body);
+    req.end();
+  });
+}
+
+// POST /api/tools/virustotal
+router.post("/tools/virustotal", async (req, res) => {
+  const { url: inputUrl } = req.body as { url?: string };
+
+  if (!inputUrl || typeof inputUrl !== "string" || !inputUrl.trim()) {
+    res.status(400).json({ error: "url is required" });
+    return;
+  }
+
+  const vtApiKey = process.env["VT_API_KEY"];
+  if (!vtApiKey) {
+    req.log.warn("VT_API_KEY not configured");
+    res.status(503).json({ error: "VT_API_KEY_MISSING" });
+    return;
+  }
+
+  const u = inputUrl.trim();
+  const vtHeaders = { "x-apikey": vtApiKey };
+
+  try {
+    // ── Step 1: Try cached result first (URL ID = base64url of URL, no padding) ──
+    const urlId = Buffer.from(u).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+
+    let analysisData: any = null;
+
+    try {
+      analysisData = await fetchJsonWithHeaders(
+        `https://www.virustotal.com/api/v3/urls/${urlId}`,
+        vtHeaders
+      );
+    } catch (cacheErr: any) {
+      if (cacheErr.statusCode !== 404) throw cacheErr;
+      // 404 = not in cache → submit for fresh scan
+    }
+
+    if (!analysisData) {
+      // ── Step 2: Submit URL for scanning ──
+      const submission = await postFormWithHeaders(
+        "https://www.virustotal.com/api/v3/urls",
+        `url=${encodeURIComponent(u)}`,
+        vtHeaders
+      );
+
+      const analysisId = submission?.data?.id;
+      if (!analysisId) throw new Error("VirusTotal did not return an analysis ID");
+
+      // ── Step 3: Poll until completed (max ~30s, 6 × 5s) ──
+      for (let attempt = 0; attempt < 6; attempt++) {
+        await sleep(5000);
+        try {
+          const poll = await fetchJsonWithHeaders(
+            `https://www.virustotal.com/api/v3/analyses/${analysisId}`,
+            vtHeaders
+          );
+          const status = poll?.data?.attributes?.status;
+          if (status === "completed") {
+            // Map analysis response to the same shape as URL lookup
+            analysisData = {
+              data: {
+                attributes: {
+                  last_analysis_stats: poll.data.attributes.stats,
+                  last_analysis_results: poll.data.attributes.results,
+                },
+              },
+            };
+            break;
+          }
+        } catch {}
+      }
+    }
+
+    if (!analysisData) {
+      res.status(504).json({ error: "ANALYSIS_TIMEOUT" });
+      return;
+    }
+
+    const attrs = analysisData.data?.attributes ?? {};
+    const stats: Record<string, number> = attrs.last_analysis_stats ?? {};
+    const results: Record<string, any> = attrs.last_analysis_results ?? {};
+
+    const maliciousCount = (stats["malicious"] ?? 0) + (stats["suspicious"] ?? 0);
+    const totalEngines =
+      Object.keys(results).length ||
+      (stats["malicious"] ?? 0) +
+        (stats["suspicious"] ?? 0) +
+        (stats["harmless"] ?? 0) +
+        (stats["undetected"] ?? 0);
+
+    const threatNames = Object.entries(results)
+      .filter(([, v]) => v?.category === "malicious" || v?.category === "phishing")
+      .map(([engine]) => engine)
+      .slice(0, 6);
+
+    res.json({
+      url: u,
+      safe: maliciousCount === 0,
+      maliciousCount,
+      totalEngines,
+      threatNames,
+      stats,
+      permalink: `https://www.virustotal.com/gui/url/${urlId}`,
+    });
+  } catch (err: any) {
+    req.log.error({ err }, "VirusTotal scan failed");
+    const status = err.statusCode === 401 ? 401 : 500;
+    res.status(status).json({ error: err.message ?? "Scan failed" });
+  }
+});
+
 // GET /api/tools/urlsafety
 router.get("/tools/urlsafety", async (req, res) => {
   const url = req.query["url"];
