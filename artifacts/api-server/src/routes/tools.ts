@@ -567,9 +567,24 @@ router.post("/tools/virustotal", async (req, res) => {
         (stats["harmless"] ?? 0) +
         (stats["undetected"] ?? 0);
 
-    const threatNames = Object.entries(results)
-      .filter(([, v]) => v?.category === "malicious" || v?.category === "phishing")
-      .map(([engine]) => engine)
+    const THREAT_CATS = new Set(["malicious", "phishing", "suspicious"]);
+
+    const engineResults: Array<{ engine: string; category: string; result: string }> =
+      Object.entries(results)
+        .map(([engine, v]: [string, any]) => ({
+          engine,
+          category: v?.category ?? "undetected",
+          result: v?.result ?? "",
+        }))
+        .sort((a, b) => {
+          const aT = THREAT_CATS.has(a.category) ? 0 : 1;
+          const bT = THREAT_CATS.has(b.category) ? 0 : 1;
+          return aT - bT || a.engine.localeCompare(b.engine);
+        });
+
+    const threatNames = engineResults
+      .filter((e) => THREAT_CATS.has(e.category))
+      .map((e) => e.engine)
       .slice(0, 6);
 
     res.json({
@@ -578,6 +593,7 @@ router.post("/tools/virustotal", async (req, res) => {
       maliciousCount,
       totalEngines,
       threatNames,
+      engineResults,
       stats,
       permalink: `https://www.virustotal.com/gui/url/${urlId}`,
     });

@@ -1,6 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Spinner } from "@/components/Spinner";
 import { ExportButton } from "@/components/ExportButton";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -10,9 +16,11 @@ import {
   ShieldAlert,
   Link2,
   XCircle,
-  CheckCircle2,
   ExternalLink,
   AlertCircle,
+  CheckCircle2,
+  MinusCircle,
+  HelpCircle,
 } from "lucide-react";
 
 /* ── Known-TLD whitelist ──────────────────────────────────────────────────── */
@@ -30,68 +38,57 @@ const KNOWN_TLDS = new Set([
   "pk","bd","ng","za","mx","ar","cl","pe","ve",
 ]);
 
-/* ── Strict URL validation ────────────────────────────────────────────────── */
+/* ── Strict URL validation (onSubmit only) ───────────────────────────────── */
 
-type ValidationState = "empty" | "valid" | "invalid";
-
-interface ValidationResult {
-  state: ValidationState;
-  messageAr: string;
-  messageEn: string;
-}
-
-function validateUrl(raw: string): ValidationResult {
+function validateUrl(raw: string): string | null {
   const s = raw.trim();
-  if (!s) return { state: "empty", messageAr: "", messageEn: "" };
+  if (!s) return "ar:الرجاء إدخال رابط|en:Please enter a URL";
 
   const hasScheme = /^https?:\/\//i.test(s);
-  if (/^[a-z][a-z0-9+\-.]*:\/\//i.test(s) && !hasScheme) {
-    return {
-      state: "invalid",
-      messageAr: "البروتوكول غير مدعوم — استخدم https:// أو http://",
-      messageEn: "Unsupported scheme — use https:// or http://",
-    };
-  }
+  if (/^[a-z][a-z0-9+\-.]*:\/\//i.test(s) && !hasScheme)
+    return "ar:البروتوكول غير مدعوم — استخدم https:// أو http://|en:Unsupported scheme — use https:// or http://";
 
   const withScheme = hasScheme ? s : `https://${s}`;
   let hostname: string;
-  try {
-    hostname = new URL(withScheme).hostname.toLowerCase();
-  } catch {
-    return { state: "invalid", messageAr: "الرابط غير صالح — تحقق من الصيغة", messageEn: "Invalid URL — check the format" };
-  }
+  try { hostname = new URL(withScheme).hostname.toLowerCase(); }
+  catch { return "ar:الرابط غير صالح — تحقق من الصيغة|en:Invalid URL — check the format"; }
 
-  if (!hostname) return { state: "invalid", messageAr: "لم يُعثر على نطاق في الرابط", messageEn: "No hostname found in URL" };
+  if (!hostname) return "ar:لم يُعثر على نطاق في الرابط|en:No hostname found in URL";
 
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
     const parts = hostname.split(".").map(Number);
     return parts.every((p) => p >= 0 && p <= 255)
-      ? { state: "valid", messageAr: "", messageEn: "" }
-      : { state: "invalid", messageAr: "عنوان IP غير صالح", messageEn: "Invalid IP address" };
+      ? null
+      : "ar:عنوان IP غير صالح|en:Invalid IP address";
   }
 
-  if (!hostname.includes(".")) {
-    return { state: "invalid", messageAr: "النطاق يجب أن يحتوي على امتداد (مثل .com أو .net أو .sa)", messageEn: "Domain must include a TLD (e.g. .com, .net, .sa)" };
-  }
+  if (!hostname.includes("."))
+    return "ar:النطاق يجب أن يحتوي على امتداد (.com, .net, .sa)|en:Domain must include a TLD (.com, .net, .sa)";
 
   const labels = hostname.split(".");
   const tld = labels[labels.length - 1];
 
-  if (!/^[a-z]{2,8}$/.test(tld)) {
-    return { state: "invalid", messageAr: `الامتداد ".${tld}" غير صالح`, messageEn: `Extension ".${tld}" is invalid` };
-  }
-  if (!KNOWN_TLDS.has(tld)) {
-    return { state: "invalid", messageAr: `الامتداد ".${tld}" غير معروف — استخدم امتداداً صالحاً (.com, .net, .sa)`, messageEn: `".${tld}" is not a recognized extension` };
-  }
+  if (!/^[a-z]{2,8}$/.test(tld))
+    return `ar:الامتداد ".${tld}" غير صالح|en:Extension ".${tld}" is invalid`;
+  if (!KNOWN_TLDS.has(tld))
+    return `ar:الامتداد ".${tld}" غير معروف — استخدم امتداداً صالحاً|en:".${tld}" is not a recognized extension`;
 
   const labelRegex = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i;
   const bad = labels.slice(0, -1).find((l) => !labelRegex.test(l));
-  if (bad) return { state: "invalid", messageAr: `جزء النطاق "${bad}" يحتوي على أحرف غير مسموح بها`, messageEn: `Domain label "${bad}" contains invalid characters` };
+  if (bad)
+    return `ar:جزء النطاق "${bad}" يحتوي على أحرف غير مسموح بها|en:Domain label "${bad}" contains invalid characters`;
 
-  return { state: "valid", messageAr: "", messageEn: "" };
+  return null;
 }
 
-/* ── VirusTotal result type ───────────────────────────────────────────────── */
+function msg(raw: string, isRtl: boolean) {
+  const [ar, en] = raw.split("|");
+  return isRtl ? ar.replace("ar:", "") : en.replace("en:", "");
+}
+
+/* ── Engine result types ─────────────────────────────────────────────────── */
+
+interface EngineEntry { engine: string; category: string; result: string }
 
 interface VtResult {
   url: string;
@@ -99,8 +96,30 @@ interface VtResult {
   maliciousCount: number;
   totalEngines: number;
   threatNames: string[];
-  stats: { malicious?: number; suspicious?: number; harmless?: number; undetected?: number };
+  engineResults: EngineEntry[];
+  stats: Record<string, number>;
   permalink: string;
+}
+
+/* ── Engine category helpers ─────────────────────────────────────────────── */
+
+const THREAT_CATS = new Set(["malicious", "phishing", "suspicious"]);
+const CLEAN_CATS  = new Set(["harmless", "clean"]);
+
+function categoryIcon(cat: string) {
+  if (THREAT_CATS.has(cat))
+    return <XCircle className="h-3.5 w-3.5 text-destructive flex-shrink-0" />;
+  if (CLEAN_CATS.has(cat))
+    return <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />;
+  return <MinusCircle className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />;
+}
+
+function categoryLabel(cat: string, isRtl: boolean): { text: string; cls: string } {
+  if (cat === "malicious")  return { text: isRtl ? "خطير"       : "Malicious",  cls: "text-destructive" };
+  if (cat === "phishing")   return { text: isRtl ? "تصيّد"      : "Phishing",   cls: "text-destructive" };
+  if (cat === "suspicious") return { text: isRtl ? "مشبوه"      : "Suspicious", cls: "text-orange-400"  };
+  if (CLEAN_CATS.has(cat))  return { text: isRtl ? "آمن"        : "Clean",      cls: "text-green-500"   };
+  return                           { text: isRtl ? "غير محدد"   : "Undetected", cls: "text-muted-foreground" };
 }
 
 /* ── Component ─────────────────────────────────────────────────────────────── */
@@ -109,27 +128,23 @@ export function DeepLinkTool() {
   const { dir } = useLanguage();
   const isRtl = dir === "rtl";
 
-  const [inputValue, setInputValue]    = useState("");
-  const [liveVal, setLiveVal]          = useState<ValidationResult>({ state: "empty", messageAr: "", messageEn: "" });
-  const [isLoading, setIsLoading]      = useState(false);
-  const [vtResult, setVtResult]        = useState<VtResult | null>(null);
-  const [scanError, setScanError]      = useState<string | null>(null);
-  const [scannedUrl, setScannedUrl]    = useState<string>("");
-
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!inputValue.trim()) { setLiveVal({ state: "empty", messageAr: "", messageEn: "" }); return; }
-    debounceRef.current = setTimeout(() => setLiveVal(validateUrl(inputValue)), 400);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [inputValue]);
+  const [inputValue, setInputValue] = useState("");
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isLoading, setIsLoading]   = useState(false);
+  const [vtResult, setVtResult]     = useState<VtResult | null>(null);
+  const [scanError, setScanError]   = useState<string | null>(null);
+  const [scannedUrl, setScannedUrl] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validation = validateUrl(inputValue);
-    setLiveVal(validation);
-    if (validation.state !== "valid") return;
+
+    // ── Validate only on submit ──
+    const validationErr = validateUrl(inputValue);
+    if (validationErr) {
+      setSubmitError(msg(validationErr, isRtl));
+      return;
+    }
+    setSubmitError(null);
 
     let url = inputValue.trim();
     if (!/^https?:\/\//i.test(url)) url = "https://" + url;
@@ -145,20 +160,17 @@ export function DeepLinkTool() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
-
       const data = await resp.json();
 
       if (!resp.ok) {
-        if (data?.error === "VT_API_KEY_MISSING") {
-          setScanError(isRtl ? "مفتاح VirusTotal API غير مُضاف — يرجى إضافة VT_API_KEY في إعدادات البيئة" : "VirusTotal API key not configured — add VT_API_KEY to environment settings");
-        } else if (data?.error === "ANALYSIS_TIMEOUT") {
+        if (data?.error === "VT_API_KEY_MISSING")
+          setScanError(isRtl ? "مفتاح VirusTotal API غير مُضاف في إعدادات البيئة (VT_API_KEY)" : "VirusTotal API key not configured — add VT_API_KEY to environment settings");
+        else if (data?.error === "ANALYSIS_TIMEOUT")
           setScanError(isRtl ? "انتهت مهلة التحليل — حاول مرة أخرى بعد قليل" : "Analysis timed out — please try again shortly");
-        } else {
+        else
           setScanError(data?.error ?? (isRtl ? "فشل الفحص" : "Scan failed"));
-        }
         return;
       }
-
       setVtResult(data as VtResult);
     } catch {
       setScanError(isRtl ? "تعذر الاتصال بخادم الفحص — تحقق من اتصالك" : "Could not reach the scan server — check your connection");
@@ -167,32 +179,27 @@ export function DeepLinkTool() {
     }
   };
 
-  const inputBorder =
-    liveVal.state === "valid"   ? "border-green-500 focus-visible:ring-green-500" :
-    liveVal.state === "invalid" ? "border-destructive focus-visible:ring-destructive" : "";
-
   return (
     <div className="space-y-6" id="deeplink-report">
       <form onSubmit={handleSubmit} className="flex flex-col gap-2 max-w-xl">
         <div className="flex gap-3">
-          <div className="relative flex-1">
-            <Input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="https://example.com/path?param=value"
-              data-testid="input-deeplink"
-              className={`w-full font-mono pr-9 ${inputBorder}`}
-              dir="ltr"
-              autoComplete="off"
-              spellCheck={false}
-              disabled={isLoading}
-            />
-            {liveVal.state === "valid"   && <CheckCircle2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500 pointer-events-none" />}
-            {liveVal.state === "invalid" && <XCircle      className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive pointer-events-none" />}
-          </div>
+          <Input
+            value={inputValue}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              if (submitError) setSubmitError(null);
+            }}
+            placeholder="https://example.com/path?param=value"
+            data-testid="input-deeplink"
+            className={`flex-1 font-mono ${submitError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+            dir="ltr"
+            autoComplete="off"
+            spellCheck={false}
+            disabled={isLoading}
+          />
           <Button
             type="submit"
-            disabled={isLoading || liveVal.state === "invalid"}
+            disabled={isLoading}
             data-testid="button-submit-deeplink"
             className="min-w-[90px]"
           >
@@ -200,21 +207,16 @@ export function DeepLinkTool() {
           </Button>
         </div>
 
-        {liveVal.state === "invalid" && (
+        {/* Validation error — shown only after submit */}
+        {submitError && (
           <div className="flex items-start gap-2 text-destructive text-xs animate-in fade-in slide-in-from-top-1 duration-200">
             <XCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-            <span>{isRtl ? liveVal.messageAr : liveVal.messageEn}</span>
-          </div>
-        )}
-        {liveVal.state === "valid" && !isLoading && (
-          <div className="flex items-center gap-2 text-green-500 text-xs animate-in fade-in slide-in-from-top-1 duration-200">
-            <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
-            <span>{isRtl ? "الرابط صالح — يمكنك الفحص" : "URL looks valid — ready to scan"}</span>
+            <span>{submitError}</span>
           </div>
         )}
       </form>
 
-      {/* Loading state */}
+      {/* Loading */}
       {isLoading && (
         <div className="flex flex-col items-center gap-4 py-10 text-muted-foreground">
           <div className="relative">
@@ -228,7 +230,7 @@ export function DeepLinkTool() {
         </div>
       )}
 
-      {/* Error */}
+      {/* API error */}
       {scanError && !isLoading && (
         <div className="flex items-start gap-3 p-4 bg-destructive/10 text-destructive border border-destructive/20 rounded-lg animate-in fade-in duration-200">
           <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
@@ -236,7 +238,7 @@ export function DeepLinkTool() {
         </div>
       )}
 
-      {/* VirusTotal Results */}
+      {/* Results */}
       {vtResult && !isLoading && (
         <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <div className="flex items-center justify-between">
@@ -247,7 +249,7 @@ export function DeepLinkTool() {
             <ExportButton targetId="deeplink-report" filename="virustotal-report.pdf" />
           </div>
 
-          {/* Main verdict */}
+          {/* Verdict banner */}
           {vtResult.safe ? (
             <div className="flex items-center gap-4 p-5 rounded-xl border bg-green-500/10 border-green-500/30 text-green-400">
               <ShieldCheck className="h-10 w-10 flex-shrink-0" />
@@ -276,7 +278,7 @@ export function DeepLinkTool() {
             </div>
           )}
 
-          {/* Stats bar */}
+          {/* Stats row */}
           <div className="grid grid-cols-4 gap-2 text-center">
             {[
               { key: "malicious",  labelAr: "خطير",     labelEn: "Malicious",  color: "text-red-400" },
@@ -286,68 +288,85 @@ export function DeepLinkTool() {
             ].map(({ key, labelAr, labelEn, color }) => (
               <div key={key} className="bg-muted/20 border border-border/50 rounded-lg p-3">
                 <div className={`text-2xl font-black ${color}`}>
-                  {vtResult.stats[key as keyof typeof vtResult.stats] ?? 0}
+                  {vtResult.stats[key] ?? 0}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">{isRtl ? labelAr : labelEn}</div>
               </div>
             ))}
           </div>
 
-          {/* URL Details + Threat Names */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-muted/20 border border-border/50 rounded-lg p-4">
-              <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                <Link2 className="h-4 w-4" />
-                {isRtl ? "تفاصيل الرابط" : "URL Details"}
-              </h4>
-              {(() => {
-                try {
-                  const u = new URL(scannedUrl);
-                  return (
-                    <div className="space-y-1 text-xs">
-                      {[
-                        { label: isRtl ? "البروتوكول" : "Protocol", val: u.protocol },
-                        { label: isRtl ? "النطاق"     : "Domain",   val: u.hostname },
-                        { label: isRtl ? "المسار"     : "Path",     val: u.pathname || "/" },
-                        { label: isRtl ? "المعاملات"  : "Params",   val: u.search || (isRtl ? "لا يوجد" : "None") },
-                      ].map((row) => (
-                        <div key={row.label} className="flex justify-between gap-2">
-                          <span className="text-muted-foreground">{row.label}</span>
-                          <span className="font-mono text-foreground break-all" dir="ltr">{row.val}</span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                } catch {
-                  return null;
-                }
-              })()}
-            </div>
-
-            {vtResult.threatNames.length > 0 ? (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                <h4 className="text-sm font-semibold mb-2 text-destructive flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  {isRtl ? "محركات صنّفته خطراً" : "Engines that flagged it"}
-                </h4>
-                <ul className="space-y-1">
-                  {vtResult.threatNames.map((engine, i) => (
-                    <li key={i} className="text-xs text-destructive flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-destructive inline-block flex-shrink-0" />
-                      {engine}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 flex items-center gap-3">
-                <ShieldCheck className="h-6 w-6 text-green-400 flex-shrink-0" />
-                <span className="text-sm text-green-400 font-medium">
-                  {isRtl ? "لا توجد محركات صنّفته تهديداً" : "No engines flagged this URL"}
-                </span>
-              </div>
-            )}
+          {/* URL details */}
+          <div className="bg-muted/20 border border-border/50 rounded-lg p-4">
+            <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
+              {isRtl ? "تفاصيل الرابط" : "URL Details"}
+            </h4>
+            {(() => {
+              try {
+                const u = new URL(scannedUrl);
+                return (
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                    {[
+                      { label: isRtl ? "البروتوكول" : "Protocol", val: u.protocol },
+                      { label: isRtl ? "النطاق"     : "Domain",   val: u.hostname },
+                      { label: isRtl ? "المسار"     : "Path",     val: u.pathname || "/" },
+                      { label: isRtl ? "المعاملات"  : "Params",   val: u.search || (isRtl ? "لا يوجد" : "None") },
+                    ].map((row) => (
+                      <div key={row.label} className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{row.label}</span>
+                        <span className="font-mono text-foreground break-all" dir="ltr">{row.val}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              } catch { return null; }
+            })()}
           </div>
+
+          {/* ── Engine Details Accordion ── */}
+          {(vtResult.engineResults?.length ?? 0) > 0 && (
+            <Accordion type="single" collapsible className="border border-border/50 rounded-lg overflow-hidden">
+              <AccordionItem value="engines" className="border-0">
+                <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/20 transition-colors">
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                    <span>{isRtl ? "تفاصيل المحركات الأمنية" : "Security Vendors"}</span>
+                    <span className="text-xs font-normal text-muted-foreground">
+                      ({vtResult.totalEngines} {isRtl ? "محرك" : "engines"})
+                    </span>
+                    {vtResult.maliciousCount > 0 && (
+                      <span className="text-xs font-semibold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
+                        {vtResult.maliciousCount} {isRtl ? "تهديد" : "threat(s)"}
+                      </span>
+                    )}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-0 pb-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-border/30">
+                    {vtResult.engineResults.map((entry) => {
+                      const { text, cls } = categoryLabel(entry.category, isRtl);
+                      const isThreat = THREAT_CATS.has(entry.category);
+                      return (
+                        <div
+                          key={entry.engine}
+                          className={`flex items-center justify-between gap-2 px-3 py-2 text-xs bg-background
+                            ${isThreat ? "bg-destructive/5" : ""}`}
+                        >
+                          <span className="font-medium text-foreground truncate" title={entry.engine}>
+                            {entry.engine}
+                          </span>
+                          <div className={`flex items-center gap-1.5 flex-shrink-0 ${cls}`}>
+                            {categoryIcon(entry.category)}
+                            <span className="font-semibold whitespace-nowrap">{text}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          )}
 
           {/* VT permalink */}
           <a
