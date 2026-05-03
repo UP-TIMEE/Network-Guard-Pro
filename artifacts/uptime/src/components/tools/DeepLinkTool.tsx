@@ -23,20 +23,8 @@ import {
   HelpCircle,
 } from "lucide-react";
 
-/* ── Known-TLD whitelist ──────────────────────────────────────────────────── */
-
-const KNOWN_TLDS = new Set([
-  "com","net","org","edu","gov","mil","int","info","biz","name","pro","mobi",
-  "coop","aero","museum","tel","travel","jobs","cat","post","xxx",
-  "app","web","dev","ai","io","co","me","tv","cc","ws","bz","us","eu","cx",
-  "online","site","store","shop","tech","digital","cloud","media","news",
-  "agency","consulting","services","solutions","systems","global","group",
-  "network","link","click","email","support","blog","wiki","forum",
-  "sa","ae","eg","kw","qa","bh","om","jo","iq","sy","ly","tn","ma","dz","ye",
-  "uk","de","fr","ru","cn","jp","kr","in","br","au","ca","it","es","nl","pl",
-  "se","no","dk","fi","ch","at","be","pt","cz","hu","ro","bg","hr","gr","tr",
-  "pk","bd","ng","za","mx","ar","cl","pe","ve",
-]);
+/* ── TLD validation: accept any 2-10 alphabetic character TLD ─────────────── */
+const VALID_TLD_RE = /^[a-z]{2,10}$/i;
 
 /* ── Strict URL validation (onSubmit only) ───────────────────────────────── */
 
@@ -68,10 +56,8 @@ function validateUrl(raw: string): string | null {
   const labels = hostname.split(".");
   const tld = labels[labels.length - 1];
 
-  if (!/^[a-z]{2,8}$/.test(tld))
-    return `ar:الامتداد ".${tld}" غير صالح|en:Extension ".${tld}" is invalid`;
-  if (!KNOWN_TLDS.has(tld))
-    return `ar:الامتداد ".${tld}" غير معروف — استخدم امتداداً صالحاً|en:".${tld}" is not a recognized extension`;
+  if (!VALID_TLD_RE.test(tld))
+    return `ar:الامتداد ".${tld}" غير صالح — يجب أن يتكون من حروف فقط (2-10 أحرف)|en:Extension ".${tld}" is invalid — must be 2-10 alphabetic characters`;
 
   const labelRegex = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i;
   const bad = labels.slice(0, -1).find((l) => !labelRegex.test(l));
