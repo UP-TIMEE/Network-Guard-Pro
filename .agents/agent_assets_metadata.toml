@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "LFvoYKcG5p35b5ORRYe3V"
+uri = "file://uptime-netlify.zip"
+type = "unspecified"
+title = "uptime-netlify.zip — Netlify Deployment Package"

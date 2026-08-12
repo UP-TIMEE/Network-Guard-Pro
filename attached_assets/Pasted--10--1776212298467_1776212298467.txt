@@ -1,0 +1,27 @@
+"توسيع قاعدة بيانات 'مختبر القرارات السريعة' إلى 10 سيناريوهات احترافية:
+
+المطلوب: قم بتحديث مصفوفة securityScenarios لتشمل 10 حالات متنوعة مع مراعاة الدقة في الروابط (URLs) والرسائل.
+
+البيانات الجديدة (JSON):
+
+{ content: 'https://sso.stc.com.sa', type: 'رابط URL', isMalicious: false, explanation: 'هذا هو رابط تسجيل الدخول الموحد الرسمي لشركة STC.' }
+
+{ content: 'تم إيقاف حسابك البنكي، يرجى تحديث البيانات عبر الرابط: alrajhi-portal.me', type: 'رسالة نصية', isMalicious: true, explanation: 'البنوك لا تطلب تحديث البيانات عبر روابط في رسائل نصية، والنطاق .me مشبوه.' }
+
+{ content: 'https://iam.gov.sa', type: 'رابط URL', isMalicious: false, explanation: 'هذا هو الرابط الرسمي لبوابة نفاذ (النفاذ الوطني الموحد).' }
+
+{ content: 'https://portal.rnicrosoft.com', type: 'رابط URL', isMalicious: true, explanation: 'لاحظ دمج حرفي r و n ليبدو كحرف m، هجوم Homoglyph كلاسيكي.' }
+
+{ content: 'شحنتك من سمسا جاهزة، ادفع رسوم التوصيل (15 ريال) هنا: smsa-pay.top', type: 'رسالة نصية', isMalicious: true, explanation: 'شركات الشحن لا تستخدم نطاقات مثل .top، هذا رابط تصيد لسرقة البطاقات.' }
+
+{ content: 'https://www.apple.com/sa-ar/', type: 'رابط URL', isMalicious: false, explanation: 'الرابط الرسمي لشركة أبل في السعودية.' }
+
+{ content: 'وصلتك مكافأة أداء لموظفي UPTIME، اضغط هنا للتحميل: uptime-bonus.exe', type: 'بريد إلكتروني', isMalicious: true, explanation: 'الملفات التي تنتهي بـ .exe هي برامج تنفيذية قد تحتوي على فيروسات، لا تحملها أبداً.' }
+
+{ content: 'http://192.168.1.1.secure-login.com', type: 'رابط URL', isMalicious: true, explanation: 'المهاجم وضع عنوان IP في بداية الرابط لخداعك، الدومين الحقيقي هو secure-login.com وهو مشبوه.' }
+
+{ content: 'https://twitter.com/MOISaudiArabia', type: 'رابط URL', isMalicious: false, explanation: 'الحساب الرسمي لوزارة الداخلية السعودية على منصة X.' }
+
+{ content: 'تحديث أمني عاجل لويندوز، اضغط هنا: windows-security-update.xyz', type: 'رابط URL', isMalicious: true, explanation: 'تحديثات الويندوز تتم من خلال إعدادات النظام، وليس عبر روابط خارجية بنطاق .xyz.' }
+
+المطلوب برمجياً: تأكد أن النظام يختار 10 أسئلة في كل جولة، ويقوم بخلط ترتيبها (Shuffle) لضمان عدم التكرار بنفس الترتيب."

@@ -1,0 +1,50 @@
+import { Switch, Route, Router as WouterRouter } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { useEffect } from "react";
+import { LanguageProvider } from "@/contexts/LanguageContext";
+import NotFound from "@/pages/not-found";
+import Home from "@/pages/Home";
+import Tools from "@/pages/Tools";
+import Training from "@/pages/Training";
+import News from "@/pages/News";
+
+const queryClient = new QueryClient();
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/tools" component={Tools} />
+      <Route path="/training" component={Training} />
+      <Route path="/news" component={News} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+export default function App() {
+  useEffect(() => {
+    const saved = localStorage.getItem("uptime_dark");
+    const isDark = saved === null ? true : saved === "true";
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  return (
+    <LanguageProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </LanguageProvider>
+  );
+}
